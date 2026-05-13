@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f1419">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Smartlab">
+<title>Smartlab — учёт рабочего времени</title>
+<link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIlNtYXJ0bGFiIFRyYWNrZXIiLAogICJzaG9ydF9uYW1lIjogIlNtYXJ0bGFiIiwKICAic3RhcnRfdXJsIjogIi4vIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGYxNDE5IiwKICAidGhlbWVfY29sb3IiOiAiIzBmMTQxOSIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDE5MiAxOTInPjxyZWN0IHdpZHRoPScxOTInIGhlaWdodD0nMTkyJyByeD0nNDQnIHJ5PSc0NCcgZmlsbD0nJTIzMGYxNDE5Jy8+PHRleHQgeD0nOTYnIHk9Jzk2JyBmb250LWZhbWlseT0nLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsc3lzdGVtLXVpLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nNzInIGZvbnQtd2VpZ2h0PSc3MDAnIGZpbGw9JyUyMzU0YjU3OCcgdGV4dC1hbmNob3I9J21pZGRsZScgZG9taW5hbnQtYmFzZWxpbmU9J2NlbnRyYWwnIGxldHRlci1zcGFjaW5nPSctMyc+U0w8L3RleHQ+PC9zdmc+IiwKICAgICAgInNpemVzIjogIjE5MngxOTIgNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiLAogICAgICAicHVycG9zZSI6ICJhbnkiCiAgICB9CiAgXQp9">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='44' ry='44' fill='%230f1419'/%3E%3Ctext x='96' y='96' font-family='-apple-system,BlinkMacSystemFont,system-ui,sans-serif' font-size='72' font-weight='700' fill='%2354b578' text-anchor='middle' dominant-baseline='central' letter-spacing='-3'%3ESL%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='44' ry='44' fill='%230f1419'/%3E%3Ctext x='96' y='96' font-family='-apple-system,BlinkMacSystemFont,system-ui,sans-serif' font-size='72' font-weight='700' fill='%2354b578' text-anchor='middle' dominant-baseline='central' letter-spacing='-3'%3ESL%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #0f1419;
+    --bg-elevated: #1a2129;
+    --bg-input: #232c36;
+    --border: #2d3742;
+    --border-soft: #1f2730;
+    --text: #e8ecef;
+    --text-dim: #8a96a3;
+    --text-faint: #5a6573;
+    --accent: #54b578;
+    --accent-dim: #2d6b48;
+    --weekend: #b176d6;
+    --weekend-dim: rgba(177, 118, 214, 0.12);
+    --danger: #d97757;
+    --warning: #d4a543;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .app {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 4px 16px;
+  }
+  .header h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .header .logo-accent { color: var(--accent); }
+  .header-info {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-elevated);
+    padding: 4px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+  .tab {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .tab.active {
+    background: var(--bg-input);
+    color: var(--text);
+  }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* Today */
+  .today-card {
+    background: var(--bg-elevated);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+  .today-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  .day-badge {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: var(--accent-dim);
+    color: var(--accent);
+  }
+  .day-badge.weekend {
+    background: var(--weekend-dim);
+    color: var(--weekend);
+  }
+  .today-hours {
+    font-size: 40px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+  .today-hours-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+  .today-pay {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-soft);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .today-pay-label {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .today-pay-value {
+    font-size: 20px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+  }
+  .today-pay-value.weekend { color: var(--weekend); }
+
+  /* Hours input block */
+  .input-block {
+    background: var(--bg-elevated);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+  .input-block-title {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+  }
+  .hours-row {
+    display: flex;
+    align-items: center;
+    background: var(--bg-input);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .hours-row.filled { border-color: var(--accent-dim); background: rgba(84, 181, 120, 0.06); }
+  .hours-row.filled.weekend { border-color: rgba(177, 118, 214, 0.35); background: var(--weekend-dim); }
+  .hours-row:focus-within { border-color: var(--accent); }
+  .hours-row.weekend:focus-within { border-color: var(--weekend); }
+  .hours-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 26px;
+    font-weight: 500;
+    text-align: center;
+    padding: 14px 4px;
+    font-family: inherit;
+    font-variant-numeric: tabular-nums;
+    width: 100%;
+    min-width: 0;
+    -moz-appearance: textfield;
+  }
+  .hours-input::-webkit-outer-spin-button,
+  .hours-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .hours-input:focus { outline: none; }
+  .hours-input::placeholder { color: var(--text-faint); font-weight: 400; }
+  .hours-suffix {
+    color: var(--text-dim);
+    font-size: 16px;
+    padding-right: 16px;
+    user-select: none;
+  }
+
+  .reset-link {
+    display: block;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .reset-link:hover { color: var(--danger); }
+
+  /* "Не работал" toggle */
+  .dayoff-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .dayoff-toggle:active { transform: scale(0.99); }
+  .dayoff-toggle.active {
+    background: rgba(177, 118, 214, 0.10);
+    border-color: rgba(177, 118, 214, 0.4);
+  }
+  .dayoff-toggle input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-input);
+    cursor: pointer;
+    flex-shrink: 0;
+    position: relative;
+    margin: 0;
+    transition: all 0.15s;
+  }
+  .dayoff-toggle input[type="checkbox"]:checked {
+    background: var(--weekend);
+    border-color: var(--weekend);
+  }
+  .dayoff-toggle input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 6px;
+    height: 11px;
+    border: solid #0a0612;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  .dayoff-toggle-text { flex: 1; }
+  .dayoff-toggle-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .dayoff-toggle-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  /* Stats */
+  .stats-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .period-tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--bg-elevated);
+    padding: 3px;
+    border-radius: 9px;
+    flex: 1;
+  }
+  .period-btn {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .period-btn.active { background: var(--bg-input); color: var(--text); }
+
+  .stats-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-elevated);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+  .nav-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: var(--bg-input);
+    color: var(--text);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+  }
+  .nav-btn:hover { background: var(--border); }
+  .nav-label {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-transform: capitalize;
+  }
+
+  .summary-card {
+    background: var(--bg-elevated);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+  .summary-total {
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    margin-bottom: 2px;
+  }
+  .summary-total-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-soft);
+  }
+  .summary-cell-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .summary-cell-value {
+    font-size: 17px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .summary-cell-value.weekday { color: var(--accent); }
+  .summary-cell-value.weekend { color: var(--weekend); }
+  .summary-cell-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+    margin-top: 2px;
+  }
+
+  .norm-card {
+    background: var(--bg-elevated);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    font-size: 13px;
+  }
+  .norm-row { display: flex; flex-direction: column; }
+  .norm-label { color: var(--text-dim); font-size: 12px; margin-bottom: 2px; }
+  .norm-value { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  /* Days list */
+  .days-list {
+    background: var(--bg-elevated);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .days-list-header {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 14px 18px 8px;
+  }
+  .day-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 18px;
+    border-top: 1px solid var(--border-soft);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .day-row:hover { background: rgba(255, 255, 255, 0.02); }
+  .day-row-date {
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .day-row-date .dow {
+    color: var(--text-faint);
+    font-size: 12px;
+    margin-left: 6px;
+    text-transform: capitalize;
+  }
+  .day-row.weekend .dow { color: var(--weekend); }
+  .day-row-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 7px;
+    border-radius: 5px;
+    margin-left: 8px;
+    background: var(--weekend-dim);
+    color: var(--weekend);
+    vertical-align: 1px;
+  }
+  .day-row-hours {
+    font-size: 14px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .day-row-pay {
+    font-size: 14px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    min-width: 70px;
+    text-align: right;
+  }
+  .day-row.weekend .day-row-pay { color: var(--weekend); }
+  .day-row:not(.weekend) .day-row-pay { color: var(--accent); }
+
+  .day-row.empty .day-row-date,
+  .day-row.empty .day-row-hours,
+  .day-row.empty .day-row-pay {
+    color: var(--text-faint);
+  }
+  .day-row.empty.weekend .dow { color: rgba(177, 118, 214, 0.5); }
+  .day-row.empty:hover {
+    background: rgba(84, 181, 120, 0.04);
+  }
+  .day-row.empty:hover .day-row-pay {
+    color: var(--accent);
+  }
+  .day-row.empty:hover .day-row-pay::before {
+    content: '+ ';
+  }
+
+  .empty-state {
+    text-align: center;
+    color: var(--text-dim);
+    padding: 32px 16px;
+    font-size: 14px;
+  }
+
+  /* Settings */
+  .settings-section {
+    background: var(--bg-elevated);
+    border-radius: 14px;
+    padding: 4px 0;
+    margin-bottom: 12px;
+  }
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    cursor: pointer;
+    border-top: 1px solid var(--border-soft);
+    transition: background 0.1s;
+    gap: 12px;
+  }
+  .settings-row:first-child { border-top: none; }
+  .settings-row:hover { background: rgba(255, 255, 255, 0.02); }
+  .settings-row-label {
+    font-size: 14px;
+  }
+  .settings-row-value {
+    font-size: 14px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .settings-row.danger .settings-row-label { color: var(--danger); }
+  .settings-row .chevron {
+    color: var(--text-faint);
+    font-size: 16px;
+  }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 100;
+    padding: 16px;
+  }
+  .modal-backdrop.show { display: flex; }
+  @media (min-width: 600px) {
+    .modal-backdrop { align-items: center; }
+  }
+  .modal {
+    background: var(--bg-elevated);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 480px;
+    padding: 20px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal h2 {
+    margin: 0 0 16px;
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .modal-field {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 14px;
+  }
+  .modal-field label {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .modal-field input,
+  .modal-field textarea {
+    background: var(--bg-input);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: inherit;
+    font-variant-numeric: tabular-nums;
+    width: 100%;
+  }
+  .modal-field input:focus,
+  .modal-field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .modal-field textarea {
+    min-height: 140px;
+    resize: vertical;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .modal-hint {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+  .modal-hint code {
+    background: var(--bg-input);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--accent); color: #0a1410; }
+  .btn-secondary { background: var(--bg-input); color: var(--text); }
+  .btn-danger { background: var(--danger); color: #1a0a06; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg-input);
+    color: var(--text);
+    padding: 12px 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.2s;
+    z-index: 200;
+    max-width: 90%;
+    text-align: center;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Install hint */
+  .install-hint {
+    display: none;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .install-hint.show { display: block; }
+  .install-hint b { color: var(--text); }
+  .install-hint .dismiss {
+    color: var(--text-faint);
+    text-decoration: underline;
+    cursor: pointer;
+    margin-left: 4px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1><span class="logo-accent">●</span> Smartlab</h1>
+    <div class="header-info" id="header-info"></div>
+  </div>
+
+  <div class="install-hint" id="install-hint">
+    <b>Установить на рабочий стол:</b> в браузере → меню → «Установить приложение».
+    <span class="dismiss" id="dismiss-install">скрыть</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-view="today">Сегодня</button>
+    <button class="tab" data-view="stats">Статистика</button>
+    <button class="tab" data-view="settings">Настройки</button>
+  </div>
+
+  <!-- ============ TODAY ============ -->
+  <div class="view active" id="view-today">
+    <div class="today-card">
+      <div class="today-meta">
+        <span id="today-date"></span>
+        <span class="day-badge" id="today-badge">Будний</span>
+      </div>
+      <div class="today-hours" id="today-hours-display">0.0</div>
+      <div class="today-hours-label">часов отработано</div>
+      <div class="today-pay">
+        <span class="today-pay-label">К начислению за день</span>
+        <span class="today-pay-value" id="today-pay">0 ₴</span>
+      </div>
+    </div>
+
+    <div class="input-block">
+      <div class="input-block-title">Отработано часов</div>
+      <div class="hours-row" id="hours-row">
+        <input
+          type="number"
+          class="hours-input"
+          id="hours-input"
+          placeholder="0"
+          min="0"
+          max="24"
+          step="0.5"
+          inputmode="decimal"
+        >
+        <span class="hours-suffix">ч</span>
+      </div>
+    </div>
+
+    <label class="dayoff-toggle" id="dayoff-toggle">
+      <input type="checkbox" id="dayoff-check">
+      <div class="dayoff-toggle-text">
+        <div class="dayoff-toggle-title">Не работал в этот день</div>
+        <div class="dayoff-toggle-sub">Отгул, отпуск, больничный</div>
+      </div>
+    </label>
+
+    <div class="reset-link" id="reset-link">Сбросить запись за сегодня</div>
+  </div>
+
+  <!-- ============ STATS ============ -->
+  <div class="view" id="view-stats">
+    <div class="stats-controls">
+      <div class="period-tabs">
+        <button class="period-btn active" data-period="month">Месяц</button>
+        <button class="period-btn" data-period="year">Год</button>
+      </div>
+    </div>
+
+    <div class="stats-nav">
+      <button class="nav-btn" id="stats-prev">‹</button>
+      <span class="nav-label" id="stats-label">—</span>
+      <button class="nav-btn" id="stats-next">›</button>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-total" id="summary-total">0 ₴</div>
+      <div class="summary-total-label" id="summary-total-label">К начислению за период</div>
+      <div class="summary-grid">
+        <div class="summary-cell">
+          <div class="summary-cell-label">Будние</div>
+          <div class="summary-cell-value weekday" id="summary-weekday">0 ч</div>
+          <div class="summary-cell-sub" id="summary-weekday-pay">0 ₴</div>
+        </div>
+        <div class="summary-cell">
+          <div class="summary-cell-label">Выходные (+30%)</div>
+          <div class="summary-cell-value weekend" id="summary-weekend">0 ч</div>
+          <div class="summary-cell-sub" id="summary-weekend-pay">0 ₴</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="norm-card" id="norm-card">
+      <div class="norm-row">
+        <div class="norm-label">Норма часов</div>
+        <div class="norm-value" id="norm-hours">— ч</div>
+      </div>
+      <div class="norm-row">
+        <div class="norm-label">Ставка за час</div>
+        <div class="norm-value" id="norm-rate">— ₴</div>
+      </div>
+    </div>
+
+    <div class="days-list" id="days-list">
+      <div class="days-list-header">Дни</div>
+      <div class="empty-state">Нет записей за этот период</div>
+    </div>
+  </div>
+
+  <!-- ============ SETTINGS ============ -->
+  <div class="view" id="view-settings">
+    <div class="settings-section">
+      <div class="settings-row" id="set-salary">
+        <div class="settings-row-label">Месячная ставка</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="settings-row-value" id="salary-display">25 000 ₴</span>
+          <span class="chevron">›</span>
+        </div>
+      </div>
+      <div class="settings-row" id="set-overtime">
+        <div class="settings-row-label">Надбавка за выходные</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="settings-row-value" id="overtime-display">+30%</span>
+          <span class="chevron">›</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-row" id="set-import">
+        <div class="settings-row-label">Импортировать данные</div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="settings-row" id="set-export">
+        <div class="settings-row-label">Экспортировать в CSV</div>
+        <span class="chevron">›</span>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-row danger" id="set-clear">
+        <div class="settings-row-label">Удалить все данные</div>
+        <span class="chevron">›</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODALS ============ -->
+<div class="modal-backdrop" id="modal-salary">
+  <div class="modal">
+    <h2>Месячная ставка</h2>
+    <div class="modal-field">
+      <label>Сумма в гривнах</label>
+      <input type="number" id="salary-input" min="0" step="100">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" data-close="modal-salary">Отмена</button>
+      <button class="btn btn-primary" id="salary-save">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-overtime">
+  <div class="modal">
+    <h2>Надбавка за выходные</h2>
+    <div class="modal-field">
+      <label>Процент надбавки (0–200)</label>
+      <input type="number" id="overtime-input" min="0" max="200" step="5">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" data-close="modal-overtime">Отмена</button>
+      <button class="btn btn-primary" id="overtime-save">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-import">
+  <div class="modal">
+    <h2>Импорт данных</h2>
+    <div class="modal-hint">
+      Каждая строка: <code>дата часы</code><br>
+      Дата: <code>ГГГГ-ММ-ДД</code> или <code>ДД.ММ.ГГГГ</code><br>
+      Например: <code>2025-10-15 8.5</code>
+    </div>
+    <div class="modal-field">
+      <textarea id="import-text" placeholder="2025-10-01 8&#10;2025-10-02 8.5&#10;2025-10-05 6"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" data-close="modal-import">Отмена</button>
+      <button class="btn btn-primary" id="import-confirm">Импортировать</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-day">
+  <div class="modal">
+    <h2 id="modal-day-title">Запись за день</h2>
+    <div class="modal-field">
+      <label>Часов отработано</label>
+      <input type="number" id="modal-day-hours" min="0" max="24" step="0.5">
+    </div>
+    <label class="dayoff-toggle" id="modal-dayoff-toggle">
+      <input type="checkbox" id="modal-day-dayoff">
+      <div class="dayoff-toggle-text">
+        <div class="dayoff-toggle-title">Не работал в этот день</div>
+        <div class="dayoff-toggle-sub">Отгул, отпуск, больничный</div>
+      </div>
+    </label>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="modal-day-delete">Удалить</button>
+      <button class="btn btn-secondary" data-close="modal-day">Отмена</button>
+      <button class="btn btn-primary" id="modal-day-save">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+/* =========================================================
+   STATE
+   ========================================================= */
+const STORAGE_KEY = 'smartlab-tracker-v1';
+const DEFAULT_STATE = {
+  salary: 25000,
+  overtimePct: 30,
+  // entries: { 'YYYY-MM-DD': hoursNumber }
+  entries: {},
+  statsPeriod: 'month',
+  statsCursor: { y: new Date().getFullYear(), m: new Date().getMonth() },
+  modalDayKey: null,
+};
+let state = structuredClone(DEFAULT_STATE);
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    state.salary = typeof data.salary === 'number' ? data.salary : DEFAULT_STATE.salary;
+    state.overtimePct = typeof data.overtimePct === 'number' ? data.overtimePct : DEFAULT_STATE.overtimePct;
+    state.entries = (data.entries && typeof data.entries === 'object') ? data.entries : {};
+  } catch (e) {
+    console.warn('Load failed', e);
+  }
+}
+
+/* ---- Entry helpers ----
+   An entry can be either:
+     - a plain number (legacy format = hours worked, no day-off flag)
+     - an object: { hours: number, dayOff: boolean }
+   These helpers always return a normalised view. */
+function getEntry(k) {
+  const e = state.entries[k];
+  if (e == null) return { hours: 0, dayOff: false };
+  if (typeof e === 'number') return { hours: e, dayOff: false };
+  return { hours: e.hours || 0, dayOff: !!e.dayOff };
+}
+function setEntry(k, hours, dayOff) {
+  const h = +hours || 0;
+  const d = !!dayOff;
+  if (h <= 0 && !d) {
+    delete state.entries[k];
+    return;
+  }
+  // Keep legacy format when possible (just a number) so the stored data stays
+  // backwards-compatible with anything reading the old shape.
+  state.entries[k] = d ? { hours: h, dayOff: true } : h;
+}
+function entryHours(k) { return getEntry(k).hours; }
+function entryDayOff(k) { return getEntry(k).dayOff; }
+function hasAnyEntry(k) {
+  const e = getEntry(k);
+  return e.hours > 0 || e.dayOff;
+}
+
+function save() {
+  const toSave = {
+    salary: state.salary,
+    overtimePct: state.overtimePct,
+    entries: state.entries,
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+}
+
+/* =========================================================
+   DATE HELPERS
+   ========================================================= */
+const MONTHS = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const MONTHS_GENITIVE = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const DOW_SHORT = ['вс','пн','вт','ср','чт','пт','сб'];
+
+function pad(n) { return String(n).padStart(2, '0'); }
+function todayKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+function keyToDate(k) {
+  const [y, m, d] = k.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+function isWeekend(date) {
+  const dow = date.getDay();
+  return dow === 0 || dow === 6;
+}
+function isWeekendKey(k) { return isWeekend(keyToDate(k)); }
+
+function workingDaysInMonth(year, month /* 0-11 */) {
+  let count = 0;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  for (let d = 1; d <= daysInMonth; d++) {
+    if (!isWeekend(new Date(year, month, d))) count++;
+  }
+  return count;
+}
+function workingDaysInYear(year) {
+  let total = 0;
+  for (let m = 0; m < 12; m++) total += workingDaysInMonth(year, m);
+  return total;
+}
+
+/* =========================================================
+   PAY CALC
+   ========================================================= */
+const HOURS_PER_DAY = 8;
+
+// Compute hourly rate based on a given month's working norm.
+function ratesForMonth(year, month) {
+  const wd = workingDaysInMonth(year, month);
+  const norm = wd * HOURS_PER_DAY;
+  const perHour = norm > 0 ? state.salary / norm : 0;
+  const perHourWeekend = perHour * (1 + state.overtimePct / 100);
+  return { workingDays: wd, norm, perHour, perHourWeekend };
+}
+
+// Pay for a single entry (key -> hours), using that month's rates.
+// The "не работал" flag is purely a visual marker and does NOT affect pay:
+// hours are paid strictly by calendar (Sat/Sun → +30%, weekdays → base).
+function payForEntry(k, hours) {
+  const d = keyToDate(k);
+  const r = ratesForMonth(d.getFullYear(), d.getMonth());
+  const rate = isWeekend(d) ? r.perHourWeekend : r.perHour;
+  return hours * rate;
+}
+
+/* =========================================================
+   FORMATTING
+   ========================================================= */
+function fmtMoney(n) {
+  if (!isFinite(n)) n = 0;
+  // Round to integer hryvnia, group by spaces
+  const rounded = Math.round(n);
+  return rounded.toLocaleString('ru-RU').replace(/,/g, ' ') + ' ₴';
+}
+function fmtMoneyPrecise(n) {
+  if (!isFinite(n)) n = 0;
+  return n.toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' ₴';
+}
+function fmtHours(n) {
+  if (!isFinite(n) || n === 0) return '0 ч';
+  // Drop trailing .0
+  const s = Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, '');
+  return s + ' ч';
+}
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+/* =========================================================
+   TODAY VIEW
+   ========================================================= */
+function renderToday() {
+  const k = todayKey();
+  const d = keyToDate(k);
+  const isWE = isWeekend(d);
+  const hours = entryHours(k);
+  const dayOff = entryDayOff(k);
+
+  // Date label
+  document.getElementById('today-date').textContent =
+    capitalize(DOW_SHORT[d.getDay()]) + ', ' + d.getDate() + ' ' + MONTHS_GENITIVE[d.getMonth()];
+
+  // Badge — "Не работал" overrides the text when the day-off flag is set.
+  // The flag has NO effect on pay; it's purely a visual marker.
+  const badge = document.getElementById('today-badge');
+  if (dayOff) {
+    badge.textContent = 'Не работал';
+    badge.classList.add('weekend');
+  } else if (isWE) {
+    badge.textContent = 'Выходной +' + state.overtimePct + '%';
+    badge.classList.add('weekend');
+  } else {
+    badge.textContent = 'Будний';
+    badge.classList.remove('weekend');
+  }
+
+  // Hours display
+  document.getElementById('today-hours-display').textContent = hours.toFixed(1).replace(/\.0$/, '');
+
+  // Pay — strictly by calendar. Flag does not influence it.
+  const pay = payForEntry(k, hours);
+  const payEl = document.getElementById('today-pay');
+  payEl.textContent = fmtMoney(pay);
+  payEl.classList.toggle('weekend', isWE);
+
+  // Input + row styling — also strictly by calendar.
+  const input = document.getElementById('hours-input');
+  if (document.activeElement !== input) {
+    input.value = hours > 0 ? (Number.isInteger(hours) ? String(hours) : hours.toFixed(1).replace(/\.0$/, '')) : '';
+  }
+  const row = document.getElementById('hours-row');
+  row.classList.toggle('filled', hours > 0);
+  row.classList.toggle('weekend', isWE);
+
+  // Day-off checkbox
+  const check = document.getElementById('dayoff-check');
+  check.checked = dayOff;
+  document.getElementById('dayoff-toggle').classList.toggle('active', dayOff);
+
+  // Header info
+  const r = ratesForMonth(d.getFullYear(), d.getMonth());
+  document.getElementById('header-info').textContent =
+    'Час: ' + r.perHour.toFixed(1).replace(/\.0$/, '') + ' ₴';
+}
+
+/* =========================================================
+   STATS VIEW
+   ========================================================= */
+function renderStats() {
+  if (state.statsPeriod === 'month') renderStatsMonth();
+  else renderStatsYear();
+}
+
+function aggregate(keys) {
+  // Compute totals across a list of date keys.
+  // The "не работал" flag is visual-only — hours are bucketed strictly by
+  // calendar (Sat/Sun → weekend bucket, Mon-Fri → weekday bucket).
+  let weekdayHours = 0, weekendHours = 0;
+  let weekdayPay = 0, weekendPay = 0;
+  keys.forEach(k => {
+    const h = entryHours(k);
+    if (!h) return;
+    const d = keyToDate(k);
+    const r = ratesForMonth(d.getFullYear(), d.getMonth());
+    if (isWeekend(d)) {
+      weekendHours += h;
+      weekendPay += h * r.perHourWeekend;
+    } else {
+      weekdayHours += h;
+      weekdayPay += h * r.perHour;
+    }
+  });
+  return { weekdayHours, weekendHours, weekdayPay, weekendPay, total: weekdayPay + weekendPay };
+}
+
+function renderStatsMonth() {
+  const { y, m } = state.statsCursor;
+  document.getElementById('stats-label').textContent = capitalize(MONTHS[m]) + ' ' + y;
+
+  // Collect keys for this month (used for aggregation)
+  const prefix = y + '-' + pad(m + 1) + '-';
+  const filledKeys = Object.keys(state.entries).filter(k => k.startsWith(prefix)).sort();
+
+  const agg = aggregate(filledKeys);
+  const r = ratesForMonth(y, m);
+
+  document.getElementById('summary-total').textContent = fmtMoney(agg.total);
+  document.getElementById('summary-total-label').textContent = 'К начислению за ' + MONTHS[m];
+  document.getElementById('summary-weekday').textContent = fmtHours(agg.weekdayHours);
+  document.getElementById('summary-weekday-pay').textContent = fmtMoney(agg.weekdayPay);
+  document.getElementById('summary-weekend').textContent = fmtHours(agg.weekendHours);
+  document.getElementById('summary-weekend-pay').textContent = fmtMoney(agg.weekendPay);
+
+  document.getElementById('norm-hours').textContent =
+    r.norm + ' ч (' + r.workingDays + ' дн × 8)';
+  document.getElementById('norm-rate').textContent =
+    fmtMoneyPrecise(r.perHour) + ' / ' + fmtMoneyPrecise(r.perHourWeekend);
+
+  // Build list of all days in this month, up to today for the current month.
+  // For past months — all days. For future months — empty.
+  const now = new Date();
+  const isCurrentMonth = (y === now.getFullYear() && m === now.getMonth());
+  const isFutureMonth = (y > now.getFullYear()) || (y === now.getFullYear() && m > now.getMonth());
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const lastDay = isFutureMonth ? 0 : (isCurrentMonth ? now.getDate() : daysInMonth);
+
+  const allKeys = [];
+  for (let d = 1; d <= lastDay; d++) {
+    allKeys.push(y + '-' + pad(m + 1) + '-' + pad(d));
+  }
+  renderDaysList(allKeys);
+}
+
+function renderStatsYear() {
+  const { y } = state.statsCursor;
+  document.getElementById('stats-label').textContent = String(y);
+
+  // Aggregate per month, plus total
+  const keys = Object.keys(state.entries).filter(k => k.startsWith(y + '-')).sort();
+  const agg = aggregate(keys);
+
+  document.getElementById('summary-total').textContent = fmtMoney(agg.total);
+  document.getElementById('summary-total-label').textContent = 'К начислению за ' + y + ' год';
+  document.getElementById('summary-weekday').textContent = fmtHours(agg.weekdayHours);
+  document.getElementById('summary-weekday-pay').textContent = fmtMoney(agg.weekdayPay);
+  document.getElementById('summary-weekend').textContent = fmtHours(agg.weekendHours);
+  document.getElementById('summary-weekend-pay').textContent = fmtMoney(agg.weekendPay);
+
+  const wdYear = workingDaysInYear(y);
+  document.getElementById('norm-hours').textContent =
+    (wdYear * HOURS_PER_DAY) + ' ч (' + wdYear + ' дн × 8)';
+  document.getElementById('norm-rate').textContent = '—';
+
+  // Months list
+  renderMonthsList(y);
+}
+
+function renderDaysList(keys) {
+  const list = document.getElementById('days-list');
+  list.innerHTML = '<div class="days-list-header">Дни</div>';
+  if (keys.length === 0) {
+    list.innerHTML += '<div class="empty-state">Нет дней для отображения</div>';
+    return;
+  }
+  keys.forEach(k => {
+    const e = getEntry(k);
+    const d = keyToDate(k);
+    const isWE = isWeekend(d);
+    const hasEntry = e.hours > 0;
+    const isAny = e.hours > 0 || e.dayOff;
+    const pay = hasEntry ? payForEntry(k, e.hours) : 0;
+
+    // Weekend styling follows the calendar only — flag is visual-only.
+    const row = document.createElement('div');
+    row.className = 'day-row'
+      + (isWE ? ' weekend' : '')
+      + (isAny ? '' : ' empty')
+      + (e.dayOff ? ' dayoff' : '');
+    row.innerHTML =
+      '<div class="day-row-date">' + d.getDate() + ' ' + MONTHS_GENITIVE[d.getMonth()] +
+      '<span class="dow">' + DOW_SHORT[d.getDay()] + '</span>' +
+      (e.dayOff ? '<span class="day-row-tag">не работал</span>' : '') +
+      '</div>' +
+      '<div class="day-row-hours">' + (hasEntry ? fmtHours(e.hours) : '—') + '</div>' +
+      '<div class="day-row-pay">' + (hasEntry ? fmtMoney(pay) : '—') + '</div>';
+    row.addEventListener('click', () => openDayModal(k));
+    list.appendChild(row);
+  });
+}
+
+function renderMonthsList(year) {
+  const list = document.getElementById('days-list');
+  list.innerHTML = '<div class="days-list-header">Месяцы</div>';
+  let anyData = false;
+  for (let m = 0; m < 12; m++) {
+    const prefix = year + '-' + pad(m + 1) + '-';
+    const keys = Object.keys(state.entries).filter(k => k.startsWith(prefix));
+    if (keys.length === 0) continue;
+    const agg = aggregate(keys);
+    const totalHours = agg.weekdayHours + agg.weekendHours;
+    // Skip months that only contain "не работал" markers without any hours
+    if (totalHours === 0) continue;
+    anyData = true;
+    const row = document.createElement('div');
+    row.className = 'day-row';
+    row.innerHTML =
+      '<div class="day-row-date">' + capitalize(MONTHS[m]) + '</div>' +
+      '<div class="day-row-hours">' + fmtHours(totalHours) + '</div>' +
+      '<div class="day-row-pay">' + fmtMoney(agg.total) + '</div>';
+    row.addEventListener('click', () => {
+      state.statsPeriod = 'month';
+      state.statsCursor = { y: year, m };
+      document.querySelectorAll('.period-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.period === 'month')
+      );
+      renderStats();
+    });
+    list.appendChild(row);
+  }
+  if (!anyData) {
+    list.innerHTML += '<div class="empty-state">Нет записей за этот год</div>';
+  }
+}
+
+/* =========================================================
+   DAY MODAL (edit any day from list)
+   ========================================================= */
+function openDayModal(k) {
+  state.modalDayKey = k;
+  const d = keyToDate(k);
+  document.getElementById('modal-day-title').textContent =
+    capitalize(DOW_SHORT[d.getDay()]) + ', ' + d.getDate() + ' ' + MONTHS_GENITIVE[d.getMonth()] + ' ' + d.getFullYear();
+  const e = getEntry(k);
+  document.getElementById('modal-day-hours').value = e.hours > 0 ? e.hours : '';
+  const check = document.getElementById('modal-day-dayoff');
+  check.checked = e.dayOff;
+  document.getElementById('modal-dayoff-toggle').classList.toggle('active', e.dayOff);
+  document.getElementById('modal-day').classList.add('show');
+  setTimeout(() => document.getElementById('modal-day-hours').focus(), 50);
+}
+function saveDayModal() {
+  const k = state.modalDayKey;
+  if (!k) return;
+  const val = parseFloat(document.getElementById('modal-day-hours').value);
+  const hours = (isNaN(val) || val <= 0) ? 0 : Math.min(val, 24);
+  const dayOff = document.getElementById('modal-day-dayoff').checked;
+  setEntry(k, hours, dayOff);
+  save();
+  closeModal('modal-day');
+  renderToday();
+  renderStats();
+  showToast('Сохранено');
+}
+function deleteDayModal() {
+  const k = state.modalDayKey;
+  if (!k) return;
+  delete state.entries[k];
+  save();
+  closeModal('modal-day');
+  renderToday();
+  renderStats();
+  showToast('Удалено');
+}
+
+/* =========================================================
+   IMPORT / EXPORT
+   ========================================================= */
+function parseImport(text) {
+  // Each line: date hours, where date is YYYY-MM-DD or DD.MM.YYYY,
+  // separator is whitespace, comma, semicolon, or tab.
+  const lines = text.split(/\r?\n/);
+  const result = {};
+  let parsed = 0, skipped = 0;
+  for (let raw of lines) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+    // Split by common separators
+    const parts = line.split(/[\s,;\t]+/).filter(Boolean);
+    if (parts.length < 2) { skipped++; continue; }
+    const datePart = parts[0];
+    const hoursPart = parts[parts.length - 1].replace(',', '.');
+
+    let key = null;
+    let m;
+    if ((m = datePart.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))) {
+      key = m[1] + '-' + pad(+m[2]) + '-' + pad(+m[3]);
+    } else if ((m = datePart.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/))) {
+      key = m[3] + '-' + pad(+m[2]) + '-' + pad(+m[1]);
+    } else if ((m = datePart.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/))) {
+      key = m[3] + '-' + pad(+m[1]) + '-' + pad(+m[2]);
+    }
+    const hours = parseFloat(hoursPart);
+    if (!key || isNaN(hours)) { skipped++; continue; }
+    // Validate date
+    const [y, mo, d] = key.split('-').map(Number);
+    const test = new Date(y, mo - 1, d);
+    if (test.getFullYear() !== y || test.getMonth() !== mo - 1 || test.getDate() !== d) {
+      skipped++; continue;
+    }
+    if (hours > 0) {
+      result[key] = Math.min(hours, 24);
+      parsed++;
+    } else {
+      skipped++;
+    }
+  }
+  return { entries: result, parsed, skipped };
+}
+
+function doImport() {
+  const text = document.getElementById('import-text').value;
+  if (!text.trim()) { showToast('Поле пустое'); return; }
+  const { entries, parsed, skipped } = parseImport(text);
+  if (parsed === 0) {
+    showToast('Не удалось распознать ни одной строки');
+    return;
+  }
+  // Merge while preserving any existing dayOff flag on those days
+  Object.keys(entries).forEach(k => {
+    const existingDayOff = entryDayOff(k);
+    setEntry(k, entries[k], existingDayOff);
+  });
+  save();
+  closeModal('modal-import');
+  renderToday();
+  renderStats();
+  showToast('Импортировано: ' + parsed + (skipped ? ' (пропущено: ' + skipped + ')' : ''));
+}
+
+function doExport() {
+  const keys = Object.keys(state.entries).sort();
+  if (keys.length === 0) { showToast('Нет данных для экспорта'); return; }
+  const rows = [['Дата', 'День', 'Тип', 'Часы', 'Не работал', 'ЗП (₴)']];
+  keys.forEach(k => {
+    const e = getEntry(k);
+    const d = keyToDate(k);
+    const isWE = isWeekend(d);
+    rows.push([
+      k,
+      DOW_SHORT[d.getDay()],
+      isWE ? 'выходной' : 'будний',
+      e.hours.toFixed(2).replace(/\.?0+$/, ''),
+      e.dayOff ? 'да' : '',
+      Math.round(payForEntry(k, e.hours))
+    ]);
+  });
+  const csv = rows.map(r =>
+    r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')
+  ).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'smartlab-' + todayKey() + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Экспортировано: ' + keys.length + ' дней');
+}
+
+/* =========================================================
+   TOAST + MODAL HELPERS
+   ========================================================= */
+function showToast(msg, ms) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('show'), ms || 2000);
+}
+function openModal(id) {
+  document.getElementById(id).classList.add('show');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+/* =========================================================
+   VIEW SWITCHING
+   ========================================================= */
+function switchView(name) {
+  document.querySelectorAll('.tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.view === name)
+  );
+  document.querySelectorAll('.view').forEach(v =>
+    v.classList.toggle('active', v.id === 'view-' + name)
+  );
+  if (name === 'stats') renderStats();
+  if (name === 'today') renderToday();
+}
+
+/* =========================================================
+   WIRING
+   ========================================================= */
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => switchView(t.dataset.view));
+});
+
+// Hours input
+const hoursInput = document.getElementById('hours-input');
+hoursInput.addEventListener('input', () => {
+  const k = todayKey();
+  const v = parseFloat(hoursInput.value);
+  const hours = (isNaN(v) || v <= 0) ? 0 : Math.min(v, 24);
+  setEntry(k, hours, entryDayOff(k));
+  save();
+  // Don't re-render the input itself (would lose cursor), update other parts only
+  const d = keyToDate(k);
+  const isWE = isWeekend(d);
+  document.getElementById('today-hours-display').textContent = hours.toFixed(1).replace(/\.0$/, '');
+  const pay = payForEntry(k, hours);
+  const payEl = document.getElementById('today-pay');
+  payEl.textContent = fmtMoney(pay);
+  payEl.classList.toggle('weekend', isWE);
+  document.getElementById('hours-row').classList.toggle('filled', hours > 0);
+});
+hoursInput.addEventListener('blur', () => renderToday());
+
+// Day-off checkbox on Today view
+document.getElementById('dayoff-check').addEventListener('change', (e) => {
+  const k = todayKey();
+  setEntry(k, entryHours(k), e.target.checked);
+  save();
+  renderToday();
+  showToast(e.target.checked ? 'Отмечено как нерабочий' : 'Отметка снята', 1500);
+});
+
+document.getElementById('reset-link').addEventListener('click', () => {
+  if (!confirm('Сбросить запись за сегодня?')) return;
+  delete state.entries[todayKey()];
+  save();
+  renderToday();
+  showToast('Сброшено');
+});
+
+// Stats period
+document.querySelectorAll('.period-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    const p = b.dataset.period;
+    state.statsPeriod = p;
+    const now = new Date();
+    state.statsCursor = p === 'month'
+      ? { y: now.getFullYear(), m: now.getMonth() }
+      : { y: now.getFullYear() };
+    document.querySelectorAll('.period-btn').forEach(x =>
+      x.classList.toggle('active', x.dataset.period === p)
+    );
+    renderStats();
+  });
+});
+
+document.getElementById('stats-prev').addEventListener('click', () => {
+  if (state.statsPeriod === 'month') {
+    const { y, m } = state.statsCursor;
+    state.statsCursor = m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 };
+  } else {
+    state.statsCursor = { y: state.statsCursor.y - 1 };
+  }
+  renderStats();
+});
+document.getElementById('stats-next').addEventListener('click', () => {
+  if (state.statsPeriod === 'month') {
+    const { y, m } = state.statsCursor;
+    state.statsCursor = m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 };
+  } else {
+    state.statsCursor = { y: state.statsCursor.y + 1 };
+  }
+  renderStats();
+});
+
+// Settings: salary
+document.getElementById('set-salary').addEventListener('click', () => {
+  document.getElementById('salary-input').value = state.salary;
+  openModal('modal-salary');
+});
+document.getElementById('salary-save').addEventListener('click', () => {
+  const v = parseFloat(document.getElementById('salary-input').value);
+  if (isNaN(v) || v <= 0) { showToast('Введите положительное число'); return; }
+  state.salary = v;
+  save();
+  closeModal('modal-salary');
+  updateSettingsDisplay();
+  renderToday();
+  if (document.getElementById('view-stats').classList.contains('active')) renderStats();
+  showToast('Ставка обновлена');
+});
+
+// Settings: overtime %
+document.getElementById('set-overtime').addEventListener('click', () => {
+  document.getElementById('overtime-input').value = state.overtimePct;
+  openModal('modal-overtime');
+});
+document.getElementById('overtime-save').addEventListener('click', () => {
+  const v = parseFloat(document.getElementById('overtime-input').value);
+  if (isNaN(v) || v < 0 || v > 200) { showToast('Введите число от 0 до 200'); return; }
+  state.overtimePct = v;
+  save();
+  closeModal('modal-overtime');
+  updateSettingsDisplay();
+  renderToday();
+  if (document.getElementById('view-stats').classList.contains('active')) renderStats();
+  showToast('Надбавка обновлена');
+});
+
+// Settings: import/export/clear
+document.getElementById('set-import').addEventListener('click', () => {
+  document.getElementById('import-text').value = '';
+  openModal('modal-import');
+});
+document.getElementById('import-confirm').addEventListener('click', doImport);
+document.getElementById('set-export').addEventListener('click', doExport);
+document.getElementById('set-clear').addEventListener('click', () => {
+  if (!confirm('Удалить ВСЕ данные? Это нельзя отменить.')) return;
+  state.entries = {};
+  save();
+  renderToday();
+  renderStats();
+  showToast('Все данные удалены');
+});
+
+// Day modal (from list)
+document.getElementById('modal-day-save').addEventListener('click', saveDayModal);
+document.getElementById('modal-day-delete').addEventListener('click', () => {
+  if (!confirm('Удалить запись за этот день?')) return;
+  deleteDayModal();
+});
+// Visual feedback for the dayoff checkbox inside the modal
+document.getElementById('modal-day-dayoff').addEventListener('change', (e) => {
+  document.getElementById('modal-dayoff-toggle').classList.toggle('active', e.target.checked);
+});
+
+// Generic modal close (data-close attribute)
+document.querySelectorAll('[data-close]').forEach(el => {
+  el.addEventListener('click', () => closeModal(el.dataset.close));
+});
+// Click on backdrop closes modal
+document.querySelectorAll('.modal-backdrop').forEach(b => {
+  b.addEventListener('click', (e) => {
+    if (e.target === b) b.classList.remove('show');
+  });
+});
+
+// Install hint
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+if (!isStandalone && !localStorage.getItem('smartlab-install-dismissed')) {
+  document.getElementById('install-hint').classList.add('show');
+}
+document.getElementById('dismiss-install').addEventListener('click', () => {
+  document.getElementById('install-hint').classList.remove('show');
+  localStorage.setItem('smartlab-install-dismissed', '1');
+});
+
+function updateSettingsDisplay() {
+  document.getElementById('salary-display').textContent = state.salary.toLocaleString('ru-RU').replace(/,/g, ' ') + ' ₴';
+  document.getElementById('overtime-display').textContent = '+' + state.overtimePct + '%';
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+load();
+updateSettingsDisplay();
+renderToday();
+
+// If user opens app on a new day, the "today" key will be different.
+// Re-render every minute to handle midnight rollover.
+setInterval(() => {
+  if (document.getElementById('view-today').classList.contains('active')) {
+    renderToday();
+  }
+}, 60000);
+</script>
+</body>
+</html>
