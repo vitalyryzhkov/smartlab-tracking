@@ -157,6 +157,11 @@
     color: var(--accent);
   }
   .today-pay-value.weekend { color: var(--weekend); }
+  .today-pay-value.holiday { color: var(--warning); }
+  .day-badge.holiday {
+    background: rgba(212, 165, 67, 0.13);
+    color: var(--warning);
+  }
 
   /* Hours input block */
   .input-block {
@@ -204,6 +209,8 @@
   .hours-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .hours-input:focus { outline: none; }
   .hours-input::placeholder { color: var(--text-faint); font-weight: 400; }
+  .hours-input:disabled { color: var(--text-faint); cursor: not-allowed; }
+  .hours-row.locked { opacity: 0.55; }
   .hours-suffix {
     color: var(--text-dim);
     font-size: 16px;
@@ -281,6 +288,59 @@
     font-size: 12px;
     color: var(--text-dim);
     margin-top: 2px;
+  }
+  .hidden { display: none !important; }
+
+  /* Status selector */
+  .status-block {
+    background: var(--bg-elevated);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+  .status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .modal .status-grid { grid-template-columns: repeat(2, 1fr); }
+  .status-btn {
+    padding: 12px 8px;
+    border: 1px solid var(--border-soft);
+    background: var(--bg-input);
+    color: var(--text-dim);
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.12s;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .status-btn:hover { color: var(--text); border-color: var(--border); }
+  .status-btn.active {
+    background: rgba(177, 118, 214, 0.12);
+    border-color: rgba(177, 118, 214, 0.5);
+    color: var(--weekend);
+  }
+  .status-btn[data-status=""].active {
+    background: rgba(84, 181, 120, 0.10);
+    border-color: rgba(84, 181, 120, 0.5);
+    color: var(--accent);
+  }
+  .status-btn-holiday.active {
+    background: rgba(212, 165, 67, 0.12);
+    border-color: rgba(212, 165, 67, 0.5);
+    color: var(--warning);
+  }
+  .status-hint {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 10px;
+    min-height: 16px;
+    text-align: center;
   }
 
   /* Stats */
@@ -451,6 +511,18 @@
     color: var(--weekend);
     vertical-align: 1px;
   }
+  .day-row-tag.tag-holiday {
+    background: rgba(212, 165, 67, 0.15);
+    color: var(--warning);
+  }
+  .day-row-tag.tag-vacation {
+    background: rgba(84, 181, 120, 0.13);
+    color: var(--accent);
+  }
+  .day-row-tag.tag-sick {
+    background: rgba(217, 119, 87, 0.15);
+    color: var(--danger);
+  }
   .day-row-hours {
     font-size: 14px;
     color: var(--text-dim);
@@ -465,6 +537,7 @@
   }
   .day-row.weekend .day-row-pay { color: var(--weekend); }
   .day-row:not(.weekend) .day-row-pay { color: var(--accent); }
+  .day-row.status-holiday .day-row-pay { color: var(--warning); }
 
   .day-row.empty .day-row-date,
   .day-row.empty .day-row-hours,
@@ -713,13 +786,18 @@
       </div>
     </div>
 
-    <label class="dayoff-toggle" id="dayoff-toggle">
-      <input type="checkbox" id="dayoff-check">
-      <div class="dayoff-toggle-text">
-        <div class="dayoff-toggle-title">Не работал в этот день</div>
-        <div class="dayoff-toggle-sub">Отгул, отпуск, больничный</div>
+    <label class="dayoff-toggle hidden" id="dayoff-toggle"></label>
+
+    <div class="status-block">
+      <div class="input-block-title">Статус дня</div>
+      <div class="status-grid" id="status-grid">
+        <button class="status-btn" data-status="dayoff" type="button">Выходной</button>
+        <button class="status-btn" data-status="vacation" type="button">Отпуск</button>
+        <button class="status-btn" data-status="sick" type="button">Больничный</button>
+        <button class="status-btn status-btn-holiday" data-status="holiday" type="button">Праздничный</button>
       </div>
-    </label>
+      <div class="status-hint" id="status-hint"></div>
+    </div>
 
     <div class="reset-link" id="reset-link">Сбросить запись за сегодня</div>
   </div>
@@ -866,13 +944,15 @@
       <label>Часов отработано</label>
       <input type="number" id="modal-day-hours" min="0" max="24" step="0.5">
     </div>
-    <label class="dayoff-toggle" id="modal-dayoff-toggle">
-      <input type="checkbox" id="modal-day-dayoff">
-      <div class="dayoff-toggle-text">
-        <div class="dayoff-toggle-title">Не работал в этот день</div>
-        <div class="dayoff-toggle-sub">Отгул, отпуск, больничный</div>
+    <div class="modal-field">
+      <label>Статус дня</label>
+      <div class="status-grid" id="modal-status-grid">
+        <button class="status-btn" data-status="dayoff" type="button">Выходной</button>
+        <button class="status-btn" data-status="vacation" type="button">Отпуск</button>
+        <button class="status-btn" data-status="sick" type="button">Больничный</button>
+        <button class="status-btn status-btn-holiday" data-status="holiday" type="button">Праздничный</button>
       </div>
-    </label>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-danger" id="modal-day-delete">Удалить</button>
       <button class="btn btn-secondary" data-close="modal-day">Отмена</button>
@@ -898,6 +978,7 @@ const DEFAULT_STATE = {
   statsPeriod: 'month',
   statsCursor: { y: new Date().getFullYear(), m: new Date().getMonth() },
   modalDayKey: null,
+  modalStatus: null,
 };
 let state = structuredClone(DEFAULT_STATE);
 
@@ -915,32 +996,49 @@ function load() {
 }
 
 /* ---- Entry helpers ----
-   An entry can be either:
-     - a plain number (legacy format = hours worked, no day-off flag)
-     - an object: { hours: number, dayOff: boolean }
-   These helpers always return a normalised view. */
+   An entry can be:
+     - a plain number (legacy = hours worked, no status)
+     - { hours, dayOff }       (legacy from v1.1, migrated to status)
+     - { hours, status }       (current format)
+   where status is one of: null | 'dayoff' | 'vacation' | 'sick' | 'holiday'.
+   These four are mutually exclusive (one per day). Statuses 'dayoff',
+   'vacation', 'sick' zero out hours. 'holiday' allows hours and pays at
+   weekend rate. */
+const STATUSES = ['dayoff', 'vacation', 'sick', 'holiday'];
+const STATUS_LABELS = {
+  dayoff:   { short: 'выходной',      long: 'Выходной',     sub: 'Не работал в этот день' },
+  vacation: { short: 'отпуск',        long: 'Отпуск',       sub: 'День отпуска' },
+  sick:     { short: 'больничный',    long: 'Больничный',   sub: 'День больничного' },
+  holiday:  { short: 'праздник',      long: 'Праздничный',  sub: 'Часы оплачиваются с надбавкой +30%' },
+};
+function isNoWorkStatus(s) { return s === 'dayoff' || s === 'vacation' || s === 'sick'; }
+
 function getEntry(k) {
   const e = state.entries[k];
-  if (e == null) return { hours: 0, dayOff: false };
-  if (typeof e === 'number') return { hours: e, dayOff: false };
-  return { hours: e.hours || 0, dayOff: !!e.dayOff };
+  if (e == null) return { hours: 0, status: null };
+  if (typeof e === 'number') return { hours: e, status: null };
+  // Migrate legacy { dayOff: true } to status: 'dayoff'
+  if (e.dayOff && !e.status) return { hours: e.hours || 0, status: 'dayoff' };
+  const s = STATUSES.indexOf(e.status) >= 0 ? e.status : null;
+  return { hours: e.hours || 0, status: s };
 }
-function setEntry(k, hours, dayOff) {
-  const h = +hours || 0;
-  const d = !!dayOff;
-  if (h <= 0 && !d) {
+function setEntry(k, hours, status) {
+  let h = +hours || 0;
+  const s = STATUSES.indexOf(status) >= 0 ? status : null;
+  // No-work statuses force hours to 0
+  if (isNoWorkStatus(s)) h = 0;
+  if (h <= 0 && !s) {
     delete state.entries[k];
     return;
   }
-  // Keep legacy format when possible (just a number) so the stored data stays
-  // backwards-compatible with anything reading the old shape.
-  state.entries[k] = d ? { hours: h, dayOff: true } : h;
+  // Keep plain-number format when no status set (compact, back-compat)
+  state.entries[k] = s ? { hours: h, status: s } : h;
 }
 function entryHours(k) { return getEntry(k).hours; }
-function entryDayOff(k) { return getEntry(k).dayOff; }
+function entryStatus(k) { return getEntry(k).status; }
 function hasAnyEntry(k) {
   const e = getEntry(k);
-  return e.hours > 0 || e.dayOff;
+  return e.hours > 0 || e.status != null;
 }
 
 function save() {
@@ -988,27 +1086,58 @@ function workingDaysInYear(year) {
   return total;
 }
 
+// Count weekday entries marked as 'holiday' in a given month — these are
+// subtracted from the working-day norm (per user spec: weekday holiday
+// reduces the norm and raises the per-hour rate).
+function holidayWeekdaysInMonth(year, month) {
+  const prefix = year + '-' + pad(month + 1) + '-';
+  let n = 0;
+  Object.keys(state.entries).forEach(k => {
+    if (!k.startsWith(prefix)) return;
+    if (entryStatus(k) !== 'holiday') return;
+    if (!isWeekend(keyToDate(k))) n++;
+  });
+  return n;
+}
+function holidayWeekdaysInYear(year) {
+  let n = 0;
+  for (let m = 0; m < 12; m++) n += holidayWeekdaysInMonth(year, m);
+  return n;
+}
+
 /* =========================================================
    PAY CALC
    ========================================================= */
 const HOURS_PER_DAY = 8;
 
 // Compute hourly rate based on a given month's working norm.
+// Weekday holidays reduce the norm (and therefore raise the per-hour rate).
 function ratesForMonth(year, month) {
   const wd = workingDaysInMonth(year, month);
-  const norm = wd * HOURS_PER_DAY;
+  const holidays = holidayWeekdaysInMonth(year, month);
+  const effectiveDays = Math.max(0, wd - holidays);
+  const norm = effectiveDays * HOURS_PER_DAY;
   const perHour = norm > 0 ? state.salary / norm : 0;
   const perHourWeekend = perHour * (1 + state.overtimePct / 100);
-  return { workingDays: wd, norm, perHour, perHourWeekend };
+  return {
+    workingDays: wd,
+    holidayWeekdays: holidays,
+    effectiveWorkingDays: effectiveDays,
+    norm,
+    perHour,
+    perHourWeekend,
+  };
 }
 
-// Pay for a single entry (key -> hours), using that month's rates.
-// The "не работал" flag is purely a visual marker and does NOT affect pay:
-// hours are paid strictly by calendar (Sat/Sun → +30%, weekdays → base).
+// Pay for a single entry. Weekend rate (+30%) applies when the day is
+// Sat/Sun OR when it's flagged as a holiday. No-work statuses (dayoff,
+// vacation, sick) zero out hours via setEntry so they pay 0 by default.
 function payForEntry(k, hours) {
   const d = keyToDate(k);
   const r = ratesForMonth(d.getFullYear(), d.getMonth());
-  const rate = isWeekend(d) ? r.perHourWeekend : r.perHour;
+  const status = entryStatus(k);
+  const isHoliday = status === 'holiday';
+  const rate = (isWeekend(d) || isHoliday) ? r.perHourWeekend : r.perHour;
   return hours * rate;
 }
 
@@ -1041,48 +1170,64 @@ function renderToday() {
   const d = keyToDate(k);
   const isWE = isWeekend(d);
   const hours = entryHours(k);
-  const dayOff = entryDayOff(k);
+  const status = entryStatus(k);
+  const noWork = isNoWorkStatus(status);
+  const isHoliday = status === 'holiday';
+  const useWeekendRate = isWE || isHoliday;
 
   // Date label
   document.getElementById('today-date').textContent =
     capitalize(DOW_SHORT[d.getDay()]) + ', ' + d.getDate() + ' ' + MONTHS_GENITIVE[d.getMonth()];
 
-  // Badge — "Не работал" overrides the text when the day-off flag is set.
-  // The flag has NO effect on pay; it's purely a visual marker.
+  // Badge — reflects status when set, otherwise calendar.
   const badge = document.getElementById('today-badge');
-  if (dayOff) {
-    badge.textContent = 'Не работал';
-    badge.classList.add('weekend');
+  badge.classList.remove('weekend', 'holiday');
+  if (status) {
+    badge.textContent = STATUS_LABELS[status].long;
+    badge.classList.add(isHoliday ? 'holiday' : 'weekend');
   } else if (isWE) {
     badge.textContent = 'Выходной +' + state.overtimePct + '%';
     badge.classList.add('weekend');
   } else {
     badge.textContent = 'Будний';
-    badge.classList.remove('weekend');
   }
 
   // Hours display
   document.getElementById('today-hours-display').textContent = hours.toFixed(1).replace(/\.0$/, '');
 
-  // Pay — strictly by calendar. Flag does not influence it.
+  // Pay — weekend rate applies on Sat/Sun or holiday status.
   const pay = payForEntry(k, hours);
   const payEl = document.getElementById('today-pay');
   payEl.textContent = fmtMoney(pay);
-  payEl.classList.toggle('weekend', isWE);
+  payEl.classList.remove('weekend', 'holiday');
+  if (isHoliday) payEl.classList.add('holiday');
+  else if (isWE) payEl.classList.add('weekend');
 
-  // Input + row styling — also strictly by calendar.
+  // Input + row styling
   const input = document.getElementById('hours-input');
   if (document.activeElement !== input) {
     input.value = hours > 0 ? (Number.isInteger(hours) ? String(hours) : hours.toFixed(1).replace(/\.0$/, '')) : '';
   }
+  input.disabled = noWork;
   const row = document.getElementById('hours-row');
   row.classList.toggle('filled', hours > 0);
-  row.classList.toggle('weekend', isWE);
+  row.classList.toggle('weekend', useWeekendRate);
+  row.classList.toggle('locked', noWork);
 
-  // Day-off checkbox
-  const check = document.getElementById('dayoff-check');
-  check.checked = dayOff;
-  document.getElementById('dayoff-toggle').classList.toggle('active', dayOff);
+  // Status buttons
+  document.querySelectorAll('#status-grid .status-btn').forEach(btn => {
+    btn.classList.toggle('active', (btn.dataset.status || null) === status);
+  });
+
+  // Status hint
+  const hint = document.getElementById('status-hint');
+  if (status === 'holiday') {
+    hint.textContent = 'Часы оплачиваются с надбавкой +' + state.overtimePct + '%';
+  } else if (noWork) {
+    hint.textContent = 'В этот день часы не учитываются';
+  } else {
+    hint.textContent = '';
+  }
 
   // Header info
   const r = ratesForMonth(d.getFullYear(), d.getMonth());
@@ -1099,9 +1244,8 @@ function renderStats() {
 }
 
 function aggregate(keys) {
-  // Compute totals across a list of date keys.
-  // The "не работал" flag is visual-only — hours are bucketed strictly by
-  // calendar (Sat/Sun → weekend bucket, Mon-Fri → weekday bucket).
+  // Bucket hours into weekday/weekend based on calendar OR holiday status.
+  // Holiday hours always go into the weekend (+30%) bucket regardless of day.
   let weekdayHours = 0, weekendHours = 0;
   let weekdayPay = 0, weekendPay = 0;
   keys.forEach(k => {
@@ -1109,7 +1253,9 @@ function aggregate(keys) {
     if (!h) return;
     const d = keyToDate(k);
     const r = ratesForMonth(d.getFullYear(), d.getMonth());
-    if (isWeekend(d)) {
+    const status = entryStatus(k);
+    const treatAsWeekend = isWeekend(d) || status === 'holiday';
+    if (treatAsWeekend) {
       weekendHours += h;
       weekendPay += h * r.perHourWeekend;
     } else {
@@ -1138,21 +1284,19 @@ function renderStatsMonth() {
   document.getElementById('summary-weekend').textContent = fmtHours(agg.weekendHours);
   document.getElementById('summary-weekend-pay').textContent = fmtMoney(agg.weekendPay);
 
-  document.getElementById('norm-hours').textContent =
-    r.norm + ' ч (' + r.workingDays + ' дн × 8)';
+  // Norm display — show holiday adjustment if any
+  let normText = r.norm + ' ч (' + r.effectiveWorkingDays + ' дн × 8)';
+  if (r.holidayWeekdays > 0) {
+    normText += ' — ' + r.holidayWeekdays + ' празд.';
+  }
+  document.getElementById('norm-hours').textContent = normText;
   document.getElementById('norm-rate').textContent =
     fmtMoneyPrecise(r.perHour) + ' / ' + fmtMoneyPrecise(r.perHourWeekend);
 
-  // Build list of all days in this month, up to today for the current month.
-  // For past months — all days. For future months — empty.
-  const now = new Date();
-  const isCurrentMonth = (y === now.getFullYear() && m === now.getMonth());
-  const isFutureMonth = (y > now.getFullYear()) || (y === now.getFullYear() && m > now.getMonth());
+  // Show all days of the month, every time (per user request).
   const daysInMonth = new Date(y, m + 1, 0).getDate();
-  const lastDay = isFutureMonth ? 0 : (isCurrentMonth ? now.getDate() : daysInMonth);
-
   const allKeys = [];
-  for (let d = 1; d <= lastDay; d++) {
+  for (let d = 1; d <= daysInMonth; d++) {
     allKeys.push(y + '-' + pad(m + 1) + '-' + pad(d));
   }
   renderDaysList(allKeys);
@@ -1174,8 +1318,11 @@ function renderStatsYear() {
   document.getElementById('summary-weekend-pay').textContent = fmtMoney(agg.weekendPay);
 
   const wdYear = workingDaysInYear(y);
-  document.getElementById('norm-hours').textContent =
-    (wdYear * HOURS_PER_DAY) + ' ч (' + wdYear + ' дн × 8)';
+  const holYear = holidayWeekdaysInYear(y);
+  const effYear = Math.max(0, wdYear - holYear);
+  let normText = (effYear * HOURS_PER_DAY) + ' ч (' + effYear + ' дн × 8)';
+  if (holYear > 0) normText += ' — ' + holYear + ' празд.';
+  document.getElementById('norm-hours').textContent = normText;
   document.getElementById('norm-rate').textContent = '—';
 
   // Months list
@@ -1194,19 +1341,28 @@ function renderDaysList(keys) {
     const d = keyToDate(k);
     const isWE = isWeekend(d);
     const hasEntry = e.hours > 0;
-    const isAny = e.hours > 0 || e.dayOff;
+    const isAny = e.hours > 0 || e.status != null;
+    const isHoliday = e.status === 'holiday';
+    const isNoWork = isNoWorkStatus(e.status);
     const pay = hasEntry ? payForEntry(k, e.hours) : 0;
 
-    // Weekend styling follows the calendar only — flag is visual-only.
+    // Weekend tint for the row: calendar weekend OR holiday status.
+    // No-work statuses (vacation/sick/dayoff) don't tint the row weekend
+    // even on Sat/Sun, since the day is "consumed" by the status.
+    const tintWeekend = (isWE && !isNoWork) || isHoliday;
+
+    const tagHTML = e.status
+      ? '<span class="day-row-tag tag-' + e.status + '">' + STATUS_LABELS[e.status].short + '</span>'
+      : '';
+
     const row = document.createElement('div');
     row.className = 'day-row'
-      + (isWE ? ' weekend' : '')
+      + (tintWeekend ? ' weekend' : '')
       + (isAny ? '' : ' empty')
-      + (e.dayOff ? ' dayoff' : '');
+      + (e.status ? ' status-' + e.status : '');
     row.innerHTML =
       '<div class="day-row-date">' + d.getDate() + ' ' + MONTHS_GENITIVE[d.getMonth()] +
-      '<span class="dow">' + DOW_SHORT[d.getDay()] + '</span>' +
-      (e.dayOff ? '<span class="day-row-tag">не работал</span>' : '') +
+      '<span class="dow">' + DOW_SHORT[d.getDay()] + '</span>' + tagHTML +
       '</div>' +
       '<div class="day-row-hours">' + (hasEntry ? fmtHours(e.hours) : '—') + '</div>' +
       '<div class="day-row-pay">' + (hasEntry ? fmtMoney(pay) : '—') + '</div>';
@@ -1254,30 +1410,44 @@ function renderMonthsList(year) {
    ========================================================= */
 function openDayModal(k) {
   state.modalDayKey = k;
+  state.modalStatus = entryStatus(k);
   const d = keyToDate(k);
   document.getElementById('modal-day-title').textContent =
     capitalize(DOW_SHORT[d.getDay()]) + ', ' + d.getDate() + ' ' + MONTHS_GENITIVE[d.getMonth()] + ' ' + d.getFullYear();
   const e = getEntry(k);
-  document.getElementById('modal-day-hours').value = e.hours > 0 ? e.hours : '';
-  const check = document.getElementById('modal-day-dayoff');
-  check.checked = e.dayOff;
-  document.getElementById('modal-dayoff-toggle').classList.toggle('active', e.dayOff);
+  const hoursInput = document.getElementById('modal-day-hours');
+  hoursInput.value = e.hours > 0 ? e.hours : '';
+  syncModalStatusUI();
   document.getElementById('modal-day').classList.add('show');
-  setTimeout(() => document.getElementById('modal-day-hours').focus(), 50);
+  setTimeout(() => {
+    if (!hoursInput.disabled) hoursInput.focus();
+  }, 50);
 }
+
+function syncModalStatusUI() {
+  const s = state.modalStatus;
+  document.querySelectorAll('#modal-status-grid .status-btn').forEach(btn => {
+    btn.classList.toggle('active', (btn.dataset.status || null) === s);
+  });
+  const hoursInput = document.getElementById('modal-day-hours');
+  const noWork = isNoWorkStatus(s);
+  hoursInput.disabled = noWork;
+  if (noWork) hoursInput.value = '';
+}
+
 function saveDayModal() {
   const k = state.modalDayKey;
   if (!k) return;
   const val = parseFloat(document.getElementById('modal-day-hours').value);
   const hours = (isNaN(val) || val <= 0) ? 0 : Math.min(val, 24);
-  const dayOff = document.getElementById('modal-day-dayoff').checked;
-  setEntry(k, hours, dayOff);
+  setEntry(k, hours, state.modalStatus);
   save();
   closeModal('modal-day');
   renderToday();
   renderStats();
   showToast('Сохранено');
 }
+
 function deleteDayModal() {
   const k = state.modalDayKey;
   if (!k) return;
@@ -1342,10 +1512,10 @@ function doImport() {
     showToast('Не удалось распознать ни одной строки');
     return;
   }
-  // Merge while preserving any existing dayOff flag on those days
+  // Merge while preserving any existing status on those days
   Object.keys(entries).forEach(k => {
-    const existingDayOff = entryDayOff(k);
-    setEntry(k, entries[k], existingDayOff);
+    const existingStatus = entryStatus(k);
+    setEntry(k, entries[k], existingStatus);
   });
   save();
   closeModal('modal-import');
@@ -1357,17 +1527,18 @@ function doImport() {
 function doExport() {
   const keys = Object.keys(state.entries).sort();
   if (keys.length === 0) { showToast('Нет данных для экспорта'); return; }
-  const rows = [['Дата', 'День', 'Тип', 'Часы', 'Не работал', 'ЗП (₴)']];
+  const rows = [['Дата', 'День', 'Тип', 'Часы', 'Статус', 'ЗП (₴)']];
   keys.forEach(k => {
     const e = getEntry(k);
     const d = keyToDate(k);
     const isWE = isWeekend(d);
+    const treatAsWeekend = isWE || e.status === 'holiday';
     rows.push([
       k,
       DOW_SHORT[d.getDay()],
-      isWE ? 'выходной' : 'будний',
+      treatAsWeekend ? 'выходной' : 'будний',
       e.hours.toFixed(2).replace(/\.?0+$/, ''),
-      e.dayOff ? 'да' : '',
+      e.status ? STATUS_LABELS[e.status].short : '',
       Math.round(payForEntry(k, e.hours))
     ]);
   });
@@ -1428,27 +1599,41 @@ hoursInput.addEventListener('input', () => {
   const k = todayKey();
   const v = parseFloat(hoursInput.value);
   const hours = (isNaN(v) || v <= 0) ? 0 : Math.min(v, 24);
-  setEntry(k, hours, entryDayOff(k));
+  setEntry(k, hours, entryStatus(k));
   save();
   // Don't re-render the input itself (would lose cursor), update other parts only
   const d = keyToDate(k);
   const isWE = isWeekend(d);
+  const status = entryStatus(k);
+  const isHoliday = status === 'holiday';
   document.getElementById('today-hours-display').textContent = hours.toFixed(1).replace(/\.0$/, '');
   const pay = payForEntry(k, hours);
   const payEl = document.getElementById('today-pay');
   payEl.textContent = fmtMoney(pay);
-  payEl.classList.toggle('weekend', isWE);
+  payEl.classList.remove('weekend', 'holiday');
+  if (isHoliday) payEl.classList.add('holiday');
+  else if (isWE) payEl.classList.add('weekend');
   document.getElementById('hours-row').classList.toggle('filled', hours > 0);
 });
 hoursInput.addEventListener('blur', () => renderToday());
 
-// Day-off checkbox on Today view
-document.getElementById('dayoff-check').addEventListener('change', (e) => {
-  const k = todayKey();
-  setEntry(k, entryHours(k), e.target.checked);
-  save();
-  renderToday();
-  showToast(e.target.checked ? 'Отмечено как нерабочий' : 'Отметка снята', 1500);
+// Status buttons on Today view (toggle behaviour: re-click clears the status)
+document.querySelectorAll('#status-grid .status-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const k = todayKey();
+    const clicked = btn.dataset.status || null;
+    const current = entryStatus(k);
+    // Clicking the active status again clears it (back to "рабочий" by default).
+    const newStatus = (current === clicked) ? null : clicked;
+    setEntry(k, entryHours(k), newStatus);
+    save();
+    renderToday();
+    if (newStatus) {
+      showToast('Статус: ' + STATUS_LABELS[newStatus].long, 1500);
+    } else {
+      showToast('Статус снят', 1500);
+    }
+  });
 });
 
 document.getElementById('reset-link').addEventListener('click', () => {
@@ -1550,9 +1735,13 @@ document.getElementById('modal-day-delete').addEventListener('click', () => {
   if (!confirm('Удалить запись за этот день?')) return;
   deleteDayModal();
 });
-// Visual feedback for the dayoff checkbox inside the modal
-document.getElementById('modal-day-dayoff').addEventListener('change', (e) => {
-  document.getElementById('modal-dayoff-toggle').classList.toggle('active', e.target.checked);
+// Status buttons inside the day modal (toggle behaviour)
+document.querySelectorAll('#modal-status-grid .status-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const clicked = btn.dataset.status || null;
+    state.modalStatus = (state.modalStatus === clicked) ? null : clicked;
+    syncModalStatusUI();
+  });
 });
 
 // Generic modal close (data-close attribute)
