@@ -1592,7 +1592,7 @@ function doImport() {
 function doExport() {
   const keys = Object.keys(state.entries).sort();
   if (keys.length === 0) { showToast('Нет данных для экспорта'); return; }
-  const rows = [['Дата', 'День', 'Тип', 'Часы', 'Статус', 'ЗП (₴)']];
+  const rows = [['Дата', 'День', 'Тип', 'Часы', 'Статус', 'Заметка', 'ЗП (₴)']];
   keys.forEach(k => {
     const e = getEntry(k);
     const d = keyToDate(k);
@@ -1604,6 +1604,7 @@ function doExport() {
       treatAsWeekend ? 'выходной' : 'будний',
       e.hours.toFixed(2).replace(/\.?0+$/, ''),
       e.status ? STATUS_LABELS[e.status].short : '',
+      e.note || '',
       Math.round(payForEntry(k, e.hours))
     ]);
   });
