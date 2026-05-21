@@ -8,9 +8,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Smartlab">
 <title>Smartlab — учёт рабочего времени</title>
-<link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIlNtYXJ0bGFiIFRyYWNrZXIiLAogICJzaG9ydF9uYW1lIjogIlNtYXJ0bGFiIiwKICAic3RhcnRfdXJsIjogIi4vIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGYxNDE5IiwKICAidGhlbWVfY29sb3IiOiAiIzBmMTQxOSIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDE5MiAxOTInPjxyZWN0IHdpZHRoPScxOTInIGhlaWdodD0nMTkyJyByeD0nNDQnIHJ5PSc0NCcgZmlsbD0nJTIzMGYxNDE5Jy8+PHRleHQgeD0nOTYnIHk9Jzk2JyBmb250LWZhbWlseT0nLWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsc3lzdGVtLXVpLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nNzInIGZvbnQtd2VpZ2h0PSc3MDAnIGZpbGw9JyUyMzU0YjU3OCcgdGV4dC1hbmNob3I9J21pZGRsZScgZG9taW5hbnQtYmFzZWxpbmU9J2NlbnRyYWwnIGxldHRlci1zcGFjaW5nPSctMyc+U0w8L3RleHQ+PC9zdmc+IiwKICAgICAgInNpemVzIjogIjE5MngxOTIgNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiLAogICAgICAicHVycG9zZSI6ICJhbnkiCiAgICB9CiAgXQp9">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='44' ry='44' fill='%230f1419'/%3E%3Ctext x='96' y='96' font-family='-apple-system,BlinkMacSystemFont,system-ui,sans-serif' font-size='72' font-weight='700' fill='%2354b578' text-anchor='middle' dominant-baseline='central' letter-spacing='-3'%3ESL%3C/text%3E%3C/svg%3E">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='44' ry='44' fill='%230f1419'/%3E%3Ctext x='96' y='96' font-family='-apple-system,BlinkMacSystemFont,system-ui,sans-serif' font-size='72' font-weight='700' fill='%2354b578' text-anchor='middle' dominant-baseline='central' letter-spacing='-3'%3ESL%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <style>
   :root {
     --bg: #0f1419;
@@ -758,12 +759,34 @@
     line-height: 1.5;
   }
   .install-hint.show { display: block; }
-  .install-hint b { color: var(--text); }
+  .install-hint b { color: var(--text); display: block; margin-bottom: 8px; }
+  .install-btn {
+    display: none;
+    width: 100%;
+    padding: 11px;
+    border: none;
+    border-radius: 9px;
+    background: var(--accent);
+    color: #0a1410;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    margin-bottom: 8px;
+  }
+  .install-btn:hover { opacity: 0.9; }
+  .install-btn.show { display: block; }
+  .install-manual {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
   .install-hint .dismiss {
     color: var(--text-faint);
     text-decoration: underline;
     cursor: pointer;
-    margin-left: 4px;
+    display: inline-block;
+    margin-top: 8px;
   }
 </style>
 </head>
@@ -775,7 +798,11 @@
   </div>
 
   <div class="install-hint" id="install-hint">
-    <b>Установить на рабочий стол:</b> в браузере → меню → «Установить приложение».
+    <b>Установить как приложение</b>
+    <button class="install-btn" id="install-btn">Установить</button>
+    <div class="install-manual" id="install-manual">
+      Если кнопка не сработала: меню браузера → «Установить приложение» / «Добавить на главный экран».
+    </div>
     <span class="dismiss" id="dismiss-install">скрыть</span>
   </div>
 
@@ -1829,15 +1856,56 @@ document.querySelectorAll('.modal-backdrop').forEach(b => {
   });
 });
 
-// Install hint
+// Install hint + PWA install flow
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+const installHint = document.getElementById('install-hint');
+const installBtn = document.getElementById('install-btn');
+let deferredPrompt = null;
+
+// Show the hint banner unless already installed or dismissed
 if (!isStandalone && !localStorage.getItem('smartlab-install-dismissed')) {
-  document.getElementById('install-hint').classList.add('show');
+  installHint.classList.add('show');
 }
+
+// Android/Chrome/Samsung: capture the install prompt and wire it to our button
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.classList.add('show'); // reveal the real "Установить" button
+});
+
+installBtn.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  installBtn.classList.remove('show');
+  if (outcome === 'accepted') {
+    installHint.classList.remove('show');
+    localStorage.setItem('smartlab-install-dismissed', '1');
+  }
+});
+
+// When installed, hide the banner for good
+window.addEventListener('appinstalled', () => {
+  installHint.classList.remove('show');
+  localStorage.setItem('smartlab-install-dismissed', '1');
+  deferredPrompt = null;
+});
+
 document.getElementById('dismiss-install').addEventListener('click', () => {
-  document.getElementById('install-hint').classList.remove('show');
+  installHint.classList.remove('show');
   localStorage.setItem('smartlab-install-dismissed', '1');
 });
+
+// Register the service worker (required for installability on Android)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((err) => {
+      console.warn('SW registration failed:', err);
+    });
+  });
+}
 
 function updateSettingsDisplay() {
   document.getElementById('salary-display').textContent = state.salary.toLocaleString('ru-RU').replace(/,/g, ' ') + ' ₴';
