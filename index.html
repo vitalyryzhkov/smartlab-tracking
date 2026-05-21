@@ -343,6 +343,30 @@
     text-align: center;
   }
 
+  /* Note block */
+  .note-block {
+    background: var(--bg-elevated);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+  .note-input {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 12px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 44px;
+    margin-top: 4px;
+  }
+  .note-input:focus { outline: none; border-color: var(--accent); }
+  .note-input::placeholder { color: var(--text-faint); }
+
   /* Stats */
   .stats-controls {
     display: flex;
@@ -519,6 +543,12 @@
     background: rgba(84, 181, 120, 0.13);
     color: var(--accent);
   }
+  .day-row-note {
+    font-size: 11px;
+    margin-left: 6px;
+    opacity: 0.75;
+    vertical-align: 1px;
+  }
   .day-row-tag.tag-sick {
     background: rgba(217, 119, 87, 0.15);
     color: var(--danger);
@@ -657,6 +687,7 @@
     font-size: 13px;
     line-height: 1.5;
   }
+  #modal-day-note { min-height: 70px; font-size: 14px; }
   .modal-hint {
     font-size: 12px;
     color: var(--text-dim);
@@ -797,6 +828,17 @@
         <button class="status-btn status-btn-holiday" data-status="holiday" type="button">Праздничный</button>
       </div>
       <div class="status-hint" id="status-hint"></div>
+    </div>
+
+    <div class="note-block">
+      <div class="input-block-title">Заметка</div>
+      <textarea
+        class="note-input"
+        id="note-input"
+        placeholder="Например: подработка, замена, аванс…"
+        rows="2"
+        maxlength="500"
+      ></textarea>
     </div>
 
     <div class="reset-link" id="reset-link">Сбросить запись за сегодня</div>
@@ -953,6 +995,10 @@
         <button class="status-btn status-btn-holiday" data-status="holiday" type="button">Праздничный</button>
       </div>
     </div>
+    <div class="modal-field">
+      <label>Заметка</label>
+      <textarea id="modal-day-note" placeholder="Например: подработка, замена, аванс…" maxlength="500"></textarea>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-danger" id="modal-day-delete">Удалить</button>
       <button class="btn btn-secondary" data-close="modal-day">Отмена</button>
@@ -1015,30 +1061,39 @@ function isNoWorkStatus(s) { return s === 'dayoff' || s === 'vacation' || s === 
 
 function getEntry(k) {
   const e = state.entries[k];
-  if (e == null) return { hours: 0, status: null };
-  if (typeof e === 'number') return { hours: e, status: null };
+  if (e == null) return { hours: 0, status: null, note: '' };
+  if (typeof e === 'number') return { hours: e, status: null, note: '' };
   // Migrate legacy { dayOff: true } to status: 'dayoff'
-  if (e.dayOff && !e.status) return { hours: e.hours || 0, status: 'dayoff' };
+  if (e.dayOff && !e.status) return { hours: e.hours || 0, status: 'dayoff', note: e.note || '' };
   const s = STATUSES.indexOf(e.status) >= 0 ? e.status : null;
-  return { hours: e.hours || 0, status: s };
+  return { hours: e.hours || 0, status: s, note: e.note || '' };
 }
-function setEntry(k, hours, status) {
+function setEntry(k, hours, status, note) {
   let h = +hours || 0;
   const s = STATUSES.indexOf(status) >= 0 ? status : null;
+  const n = (note || '').trim();
   // No-work statuses force hours to 0
   if (isNoWorkStatus(s)) h = 0;
-  if (h <= 0 && !s) {
+  if (h <= 0 && !s && !n) {
     delete state.entries[k];
     return;
   }
-  // Keep plain-number format when no status set (compact, back-compat)
-  state.entries[k] = s ? { hours: h, status: s } : h;
+  // Keep plain-number format only when there's nothing but hours.
+  if (!s && !n) {
+    state.entries[k] = h;
+  } else {
+    const obj = { hours: h };
+    if (s) obj.status = s;
+    if (n) obj.note = n;
+    state.entries[k] = obj;
+  }
 }
 function entryHours(k) { return getEntry(k).hours; }
 function entryStatus(k) { return getEntry(k).status; }
+function entryNote(k) { return getEntry(k).note; }
 function hasAnyEntry(k) {
   const e = getEntry(k);
-  return e.hours > 0 || e.status != null;
+  return e.hours > 0 || e.status != null || (e.note && e.note.length > 0);
 }
 
 function save() {
@@ -1219,6 +1274,12 @@ function renderToday() {
     btn.classList.toggle('active', (btn.dataset.status || null) === status);
   });
 
+  // Note field (don't clobber while user is typing in it)
+  const noteInput = document.getElementById('note-input');
+  if (document.activeElement !== noteInput) {
+    noteInput.value = entryNote(k);
+  }
+
   // Status hint
   const hint = document.getElementById('status-hint');
   if (status === 'holiday') {
@@ -1341,7 +1402,7 @@ function renderDaysList(keys) {
     const d = keyToDate(k);
     const isWE = isWeekend(d);
     const hasEntry = e.hours > 0;
-    const isAny = e.hours > 0 || e.status != null;
+    const isAny = e.hours > 0 || e.status != null || (e.note && e.note.length > 0);
     const isHoliday = e.status === 'holiday';
     const isNoWork = isNoWorkStatus(e.status);
     const pay = hasEntry ? payForEntry(k, e.hours) : 0;
@@ -1354,6 +1415,9 @@ function renderDaysList(keys) {
     const tagHTML = e.status
       ? '<span class="day-row-tag tag-' + e.status + '">' + STATUS_LABELS[e.status].short + '</span>'
       : '';
+    const noteHTML = (e.note && e.note.length > 0)
+      ? '<span class="day-row-note" title="' + e.note.replace(/"/g, '&quot;') + '">📝</span>'
+      : '';
 
     const row = document.createElement('div');
     row.className = 'day-row'
@@ -1362,7 +1426,7 @@ function renderDaysList(keys) {
       + (e.status ? ' status-' + e.status : '');
     row.innerHTML =
       '<div class="day-row-date">' + d.getDate() + ' ' + MONTHS_GENITIVE[d.getMonth()] +
-      '<span class="dow">' + DOW_SHORT[d.getDay()] + '</span>' + tagHTML +
+      '<span class="dow">' + DOW_SHORT[d.getDay()] + '</span>' + tagHTML + noteHTML +
       '</div>' +
       '<div class="day-row-hours">' + (hasEntry ? fmtHours(e.hours) : '—') + '</div>' +
       '<div class="day-row-pay">' + (hasEntry ? fmtMoney(pay) : '—') + '</div>';
@@ -1417,6 +1481,7 @@ function openDayModal(k) {
   const e = getEntry(k);
   const hoursInput = document.getElementById('modal-day-hours');
   hoursInput.value = e.hours > 0 ? e.hours : '';
+  document.getElementById('modal-day-note').value = e.note || '';
   syncModalStatusUI();
   document.getElementById('modal-day').classList.add('show');
   setTimeout(() => {
@@ -1440,7 +1505,8 @@ function saveDayModal() {
   if (!k) return;
   const val = parseFloat(document.getElementById('modal-day-hours').value);
   const hours = (isNaN(val) || val <= 0) ? 0 : Math.min(val, 24);
-  setEntry(k, hours, state.modalStatus);
+  const note = document.getElementById('modal-day-note').value;
+  setEntry(k, hours, state.modalStatus, note);
   save();
   closeModal('modal-day');
   renderToday();
@@ -1512,10 +1578,9 @@ function doImport() {
     showToast('Не удалось распознать ни одной строки');
     return;
   }
-  // Merge while preserving any existing status on those days
+  // Merge while preserving any existing status and note on those days
   Object.keys(entries).forEach(k => {
-    const existingStatus = entryStatus(k);
-    setEntry(k, entries[k], existingStatus);
+    setEntry(k, entries[k], entryStatus(k), entryNote(k));
   });
   save();
   closeModal('modal-import');
@@ -1599,7 +1664,7 @@ hoursInput.addEventListener('input', () => {
   const k = todayKey();
   const v = parseFloat(hoursInput.value);
   const hours = (isNaN(v) || v <= 0) ? 0 : Math.min(v, 24);
-  setEntry(k, hours, entryStatus(k));
+  setEntry(k, hours, entryStatus(k), entryNote(k));
   save();
   // Don't re-render the input itself (would lose cursor), update other parts only
   const d = keyToDate(k);
@@ -1617,6 +1682,14 @@ hoursInput.addEventListener('input', () => {
 });
 hoursInput.addEventListener('blur', () => renderToday());
 
+// Note input on Today view — save on each change, no full re-render needed
+const noteInput = document.getElementById('note-input');
+noteInput.addEventListener('input', () => {
+  const k = todayKey();
+  setEntry(k, entryHours(k), entryStatus(k), noteInput.value);
+  save();
+});
+
 // Status buttons on Today view (toggle behaviour: re-click clears the status)
 document.querySelectorAll('#status-grid .status-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1625,7 +1698,7 @@ document.querySelectorAll('#status-grid .status-btn').forEach(btn => {
     const current = entryStatus(k);
     // Clicking the active status again clears it (back to "рабочий" by default).
     const newStatus = (current === clicked) ? null : clicked;
-    setEntry(k, entryHours(k), newStatus);
+    setEntry(k, entryHours(k), newStatus, entryNote(k));
     save();
     renderToday();
     if (newStatus) {
