@@ -474,6 +474,25 @@
     margin-top: 2px;
   }
 
+  .summary-totalhours {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-soft);
+  }
+  .summary-totalhours-label {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .summary-totalhours-value {
+    font-size: 18px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+
   .norm-card {
     background: var(--bg-elevated);
     border-radius: 14px;
@@ -900,6 +919,10 @@
           <div class="summary-cell-value weekend" id="summary-weekend">0 ч</div>
           <div class="summary-cell-sub" id="summary-weekend-pay">0 ₴</div>
         </div>
+      </div>
+      <div class="summary-totalhours">
+        <span class="summary-totalhours-label">Всего часов</span>
+        <span class="summary-totalhours-value" id="summary-total-hours">0 ч</span>
       </div>
     </div>
 
@@ -1371,6 +1394,7 @@ function renderStatsMonth() {
   document.getElementById('summary-weekday-pay').textContent = fmtMoney(agg.weekdayPay);
   document.getElementById('summary-weekend').textContent = fmtHours(agg.weekendHours);
   document.getElementById('summary-weekend-pay').textContent = fmtMoney(agg.weekendPay);
+  document.getElementById('summary-total-hours').textContent = fmtHours(agg.weekdayHours + agg.weekendHours);
 
   // Norm display — show holiday adjustment if any
   let normText = r.norm + ' ч (' + r.effectiveWorkingDays + ' дн × 8)';
@@ -1404,6 +1428,7 @@ function renderStatsYear() {
   document.getElementById('summary-weekday-pay').textContent = fmtMoney(agg.weekdayPay);
   document.getElementById('summary-weekend').textContent = fmtHours(agg.weekendHours);
   document.getElementById('summary-weekend-pay').textContent = fmtMoney(agg.weekendPay);
+  document.getElementById('summary-total-hours').textContent = fmtHours(agg.weekdayHours + agg.weekendHours);
 
   const wdYear = workingDaysInYear(y);
   const holYear = holidayWeekdaysInYear(y);
