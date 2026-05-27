@@ -1,6 +1,6 @@
 // Smartlab Tracker — service worker
 // Bump CACHE version when you change index.html so clients fetch the new version.
-const CACHE = 'smartlab-v2';
+const CACHE = 'smartlab-v3';
 const ASSETS = [
   './',
   './index.html',

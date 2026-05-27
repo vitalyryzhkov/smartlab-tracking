@@ -127,6 +127,10 @@
     background: var(--weekend-dim);
     color: var(--weekend);
   }
+  .day-badge.dayoff {
+    background: rgba(232, 90, 90, 0.16);
+    color: #e85a5a;
+  }
   .today-hours {
     font-size: 40px;
     font-weight: 600;
@@ -554,6 +558,10 @@
     background: var(--weekend-dim);
     color: var(--weekend);
     vertical-align: 1px;
+  }
+  .day-row-tag.tag-dayoff {
+    background: rgba(232, 90, 90, 0.16);
+    color: #e85a5a;
   }
   .day-row-tag.tag-holiday {
     background: rgba(212, 165, 67, 0.15);
@@ -1286,10 +1294,12 @@ function renderToday() {
 
   // Badge — reflects status when set, otherwise calendar.
   const badge = document.getElementById('today-badge');
-  badge.classList.remove('weekend', 'holiday');
+  badge.classList.remove('weekend', 'holiday', 'dayoff');
   if (status) {
     badge.textContent = STATUS_LABELS[status].long;
-    badge.classList.add(isHoliday ? 'holiday' : 'weekend');
+    if (isHoliday) badge.classList.add('holiday');
+    else if (status === 'dayoff') badge.classList.add('dayoff');
+    else badge.classList.add('weekend');
   } else if (isWE) {
     badge.textContent = 'Выходной +' + state.overtimePct + '%';
     badge.classList.add('weekend');
