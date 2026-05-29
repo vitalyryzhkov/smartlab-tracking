@@ -138,7 +138,7 @@
     font-variant-numeric: tabular-nums;
     line-height: 1.1;
   }
-  .today-hours.overtime { color: #f08a3c; }
+  .today-hours.overtime { color: #5ba3d9; }
   .today-hours-label {
     font-size: 13px;
     color: var(--text-dim);
@@ -511,7 +511,7 @@
     font-size: 15px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-    color: #f08a3c;
+    color: #5ba3d9;
   }
 
   .norm-card {
@@ -604,7 +604,7 @@
     font-variant-numeric: tabular-nums;
   }
   .day-row-hours.overtime {
-    color: #f08a3c;
+    color: #5ba3d9;
     font-weight: 600;
   }
   .day-row-pay {
@@ -1332,13 +1332,12 @@ function holidayWeekdaysInYear(year) {
 const HOURS_PER_DAY = 8;
 
 // Returns true when hours over HOURS_PER_DAY on this day should be visually
-// highlighted as overtime. Holidays/weekends already pay +30% for everything,
-// so we don't double-highlight them. No-work statuses can't have hours.
+// highlighted as overtime. Only no-work statuses (vacation/sick/dayoff)
+// are excluded — they can't have hours at all. In every other case
+// (weekday, weekend, holiday) >8h is overtime.
 function isOvertimeEligible(k) {
-  const d = keyToDate(k);
-  if (isWeekend(d)) return false;
   const s = entryStatus(k);
-  if (s === 'holiday' || isNoWorkStatus(s)) return false;
+  if (isNoWorkStatus(s)) return false;
   return true;
 }
 function overtimeHours(k) {
