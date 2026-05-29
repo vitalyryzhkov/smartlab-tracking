@@ -138,6 +138,7 @@
     font-variant-numeric: tabular-nums;
     line-height: 1.1;
   }
+  .today-hours.overtime { color: #f08a3c; }
   .today-hours-label {
     font-size: 13px;
     color: var(--text-dim);
@@ -496,6 +497,22 @@
     font-variant-numeric: tabular-nums;
     color: var(--text);
   }
+  .summary-overtime {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 8px;
+  }
+  .summary-overtime-label {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .summary-overtime-value {
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: #f08a3c;
+  }
 
   .norm-card {
     background: var(--bg-elevated);
@@ -585,6 +602,10 @@
     font-size: 14px;
     color: var(--text-dim);
     font-variant-numeric: tabular-nums;
+  }
+  .day-row-hours.overtime {
+    color: #f08a3c;
+    font-weight: 600;
   }
   .day-row-pay {
     font-size: 14px;
@@ -716,6 +737,50 @@
     line-height: 1.5;
   }
   #modal-day-note { min-height: 70px; font-size: 14px; }
+  #chat-export-preview {
+    min-height: 140px;
+    font-size: 13px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    line-height: 1.55;
+  }
+  .period-choice {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .period-choice-btn {
+    padding: 10px 6px;
+    border: 1px solid var(--border-soft);
+    background: var(--bg-input);
+    color: var(--text-dim);
+    border-radius: 9px;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.12s;
+  }
+  .period-choice-btn:hover { color: var(--text); border-color: var(--border); }
+  .period-choice-btn.active {
+    background: rgba(84, 181, 120, 0.10);
+    border-color: rgba(84, 181, 120, 0.5);
+    color: var(--accent);
+  }
+  .range-row { display: flex; gap: 8px; }
+  .range-cell { flex: 1; }
+  .range-cell label { font-size: 12px; color: var(--text-dim); margin-bottom: 4px; display: block; }
+  .range-cell input[type="date"] {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border-soft);
+    border-radius: 9px;
+    color: var(--text);
+    padding: 9px 11px;
+    font-size: 14px;
+    font-family: inherit;
+    color-scheme: dark;
+  }
   .modal-hint {
     font-size: 12px;
     color: var(--text-dim);
@@ -932,6 +997,10 @@
         <span class="summary-totalhours-label">Всего часов</span>
         <span class="summary-totalhours-value" id="summary-total-hours">0 ч</span>
       </div>
+      <div class="summary-overtime" id="summary-overtime-row" style="display:none">
+        <span class="summary-overtime-label">Сверх нормы (8ч/день)</span>
+        <span class="summary-overtime-value" id="summary-overtime">0 ч</span>
+      </div>
     </div>
 
     <div class="norm-card" id="norm-card">
@@ -977,6 +1046,10 @@
       </div>
       <div class="settings-row" id="set-export">
         <div class="settings-row-label">Экспортировать в CSV</div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="settings-row" id="set-chat-export">
+        <div class="settings-row-label">Скопировать для чата</div>
         <span class="chevron">›</span>
       </div>
     </div>
@@ -1061,6 +1134,41 @@
       <button class="btn btn-danger" id="modal-day-delete">Удалить</button>
       <button class="btn btn-secondary" data-close="modal-day">Отмена</button>
       <button class="btn btn-primary" id="modal-day-save">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-chat-export">
+  <div class="modal">
+    <h2>Скопировать для чата</h2>
+    <div class="modal-field">
+      <label>Период</label>
+      <div class="period-choice">
+        <button class="period-choice-btn active" data-period="current-month" type="button">Текущий месяц</button>
+        <button class="period-choice-btn" data-period="selected-month" type="button">Выбранный месяц</button>
+        <button class="period-choice-btn" data-period="range" type="button">Диапазон дат</button>
+      </div>
+    </div>
+    <div class="modal-field" id="chat-range-fields" style="display:none">
+      <div class="range-row">
+        <div class="range-cell">
+          <label>С</label>
+          <input type="date" id="chat-range-from">
+        </div>
+        <div class="range-cell">
+          <label>По</label>
+          <input type="date" id="chat-range-to">
+        </div>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>Текст для отправки</label>
+      <textarea id="chat-export-preview" readonly placeholder="…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" data-close="modal-chat-export">Закрыть</button>
+      <button class="btn btn-secondary" id="chat-export-share" style="display:none">↗ Поделиться</button>
+      <button class="btn btn-primary" id="chat-export-copy">📋 Скопировать</button>
     </div>
   </div>
 </div>
@@ -1223,6 +1331,22 @@ function holidayWeekdaysInYear(year) {
    ========================================================= */
 const HOURS_PER_DAY = 8;
 
+// Returns true when hours over HOURS_PER_DAY on this day should be visually
+// highlighted as overtime. Holidays/weekends already pay +30% for everything,
+// so we don't double-highlight them. No-work statuses can't have hours.
+function isOvertimeEligible(k) {
+  const d = keyToDate(k);
+  if (isWeekend(d)) return false;
+  const s = entryStatus(k);
+  if (s === 'holiday' || isNoWorkStatus(s)) return false;
+  return true;
+}
+function overtimeHours(k) {
+  if (!isOvertimeEligible(k)) return 0;
+  const h = entryHours(k);
+  return h > HOURS_PER_DAY ? h - HOURS_PER_DAY : 0;
+}
+
 // Compute hourly rate based on a given month's working norm.
 // Weekday holidays reduce the norm (and therefore raise the per-hour rate).
 function ratesForMonth(year, month) {
@@ -1275,6 +1399,58 @@ function fmtHours(n) {
 }
 function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
+// Format overtime hours the way they appear in driver chat messages on the
+// screenshot the user shared: "+30мин", "+1час", "+1,5 часа", "+2часа", "+5часов".
+// Rules:
+//   - exactly 0.5h → "+30мин"
+//   - fractional with .5 → "+N,5 часа" (with space and comma decimal)
+//   - integer 1 → "+1час" (no space, last-digit rule)
+//   - integer 2-4 (except 12-14) → "+Nчаса"
+//   - everything else → "+Nчасов"
+function fmtOvertimeForChat(h) {
+  // Normalise to half-hour precision
+  const halves = Math.round(h * 2);
+  if (halves === 0) return '';
+  if (halves === 1) return '+30мин';
+  // halves of 2 = 1ч, 3 = 1.5ч, 4 = 2ч, etc.
+  const wholeH = halves / 2;
+  // Fractional (N,5) — always "часа", space before
+  if (halves % 2 === 1) {
+    const whole = Math.floor(wholeH);
+    return '+' + whole + ',5 часа';
+  }
+  // Whole-hour: use Russian plural rules
+  const n = wholeH;
+  const lastTwo = n % 100;
+  const last = n % 10;
+  let word;
+  if (lastTwo >= 11 && lastTwo <= 14) word = 'часов';
+  else if (last === 1) word = 'час';
+  else if (last >= 2 && last <= 4) word = 'часа';
+  else word = 'часов';
+  return '+' + n + word;
+}
+
+// Build the chat-export text for a given date range (inclusive).
+// Includes only days where overtime > 0 (per user spec).
+// Each line: "DD.MM +Nчас note" (note appended only if present).
+function buildChatExportText(fromKey, toKey) {
+  const keys = Object.keys(state.entries)
+    .filter(k => k >= fromKey && k <= toKey)
+    .sort();
+  const lines = [];
+  keys.forEach(k => {
+    const ot = overtimeHours(k);
+    if (ot <= 0) return;
+    const d = keyToDate(k);
+    const dd = pad(d.getDate()) + '.' + pad(d.getMonth() + 1);
+    const otText = fmtOvertimeForChat(ot);
+    const note = entryNote(k);
+    lines.push(dd + ' ' + otText + (note ? ' ' + note : ''));
+  });
+  return lines.join('\n');
+}
+
 /* =========================================================
    TODAY VIEW
    ========================================================= */
@@ -1308,7 +1484,10 @@ function renderToday() {
   }
 
   // Hours display
-  document.getElementById('today-hours-display').textContent = hours.toFixed(1).replace(/\.0$/, '');
+  const hoursEl = document.getElementById('today-hours-display');
+  hoursEl.textContent = hours.toFixed(1).replace(/\.0$/, '');
+  const isOvertimeToday = isOvertimeEligible(k) && hours > HOURS_PER_DAY;
+  hoursEl.classList.toggle('overtime', isOvertimeToday);
 
   // Pay — weekend rate applies on Sat/Sun or holiday status.
   const pay = payForEntry(k, hours);
@@ -1364,11 +1543,26 @@ function renderStats() {
   else renderStatsYear();
 }
 
+function renderOvertimeRow(hours) {
+  const row = document.getElementById('summary-overtime-row');
+  const val = document.getElementById('summary-overtime');
+  if (hours > 0) {
+    val.textContent = '+' + fmtHours(hours);
+    row.style.display = '';
+  } else {
+    row.style.display = 'none';
+  }
+}
+
 function aggregate(keys) {
   // Bucket hours into weekday/weekend based on calendar OR holiday status.
   // Holiday hours always go into the weekend (+30%) bucket regardless of day.
+  // Also count overtime hours (anything over HOURS_PER_DAY on a regular
+  // weekday with no status). Overtime is a visual signal only — pay is
+  // unchanged.
   let weekdayHours = 0, weekendHours = 0;
   let weekdayPay = 0, weekendPay = 0;
+  let overtime = 0;
   keys.forEach(k => {
     const h = entryHours(k);
     if (!h) return;
@@ -1383,8 +1577,9 @@ function aggregate(keys) {
       weekdayHours += h;
       weekdayPay += h * r.perHour;
     }
+    overtime += overtimeHours(k);
   });
-  return { weekdayHours, weekendHours, weekdayPay, weekendPay, total: weekdayPay + weekendPay };
+  return { weekdayHours, weekendHours, weekdayPay, weekendPay, overtime, total: weekdayPay + weekendPay };
 }
 
 function renderStatsMonth() {
@@ -1405,6 +1600,7 @@ function renderStatsMonth() {
   document.getElementById('summary-weekend').textContent = fmtHours(agg.weekendHours);
   document.getElementById('summary-weekend-pay').textContent = fmtMoney(agg.weekendPay);
   document.getElementById('summary-total-hours').textContent = fmtHours(agg.weekdayHours + agg.weekendHours);
+  renderOvertimeRow(agg.overtime);
 
   // Norm display — show holiday adjustment if any
   let normText = r.norm + ' ч (' + r.effectiveWorkingDays + ' дн × 8)';
@@ -1439,6 +1635,7 @@ function renderStatsYear() {
   document.getElementById('summary-weekend').textContent = fmtHours(agg.weekendHours);
   document.getElementById('summary-weekend-pay').textContent = fmtMoney(agg.weekendPay);
   document.getElementById('summary-total-hours').textContent = fmtHours(agg.weekdayHours + agg.weekendHours);
+  renderOvertimeRow(agg.overtime);
 
   const wdYear = workingDaysInYear(y);
   const holYear = holidayWeekdaysInYear(y);
@@ -1468,6 +1665,7 @@ function renderDaysList(keys) {
     const isHoliday = e.status === 'holiday';
     const isNoWork = isNoWorkStatus(e.status);
     const pay = hasEntry ? payForEntry(k, e.hours) : 0;
+    const isOvertime = isOvertimeEligible(k) && e.hours > HOURS_PER_DAY;
 
     // Weekend tint for the row: calendar weekend OR holiday status.
     // No-work statuses (vacation/sick/dayoff) don't tint the row weekend
@@ -1490,7 +1688,7 @@ function renderDaysList(keys) {
       '<div class="day-row-date">' + d.getDate() + ' ' + MONTHS_GENITIVE[d.getMonth()] +
       '<span class="dow">' + DOW_SHORT[d.getDay()] + '</span>' + tagHTML + noteHTML +
       '</div>' +
-      '<div class="day-row-hours">' + (hasEntry ? fmtHours(e.hours) : '—') + '</div>' +
+      '<div class="day-row-hours' + (isOvertime ? ' overtime' : '') + '">' + (hasEntry ? fmtHours(e.hours) : '—') + '</div>' +
       '<div class="day-row-pay">' + (hasEntry ? fmtMoney(pay) : '—') + '</div>';
     row.addEventListener('click', () => openDayModal(k));
     list.appendChild(row);
@@ -1734,7 +1932,9 @@ hoursInput.addEventListener('input', () => {
   const isWE = isWeekend(d);
   const status = entryStatus(k);
   const isHoliday = status === 'holiday';
-  document.getElementById('today-hours-display').textContent = hours.toFixed(1).replace(/\.0$/, '');
+  const hoursEl = document.getElementById('today-hours-display');
+  hoursEl.textContent = hours.toFixed(1).replace(/\.0$/, '');
+  hoursEl.classList.toggle('overtime', isOvertimeEligible(k) && hours > HOURS_PER_DAY);
   const pay = payForEntry(k, hours);
   const payEl = document.getElementById('today-pay');
   payEl.textContent = fmtMoney(pay);
@@ -1856,6 +2056,115 @@ document.getElementById('set-import').addEventListener('click', () => {
 });
 document.getElementById('import-confirm').addEventListener('click', doImport);
 document.getElementById('set-export').addEventListener('click', doExport);
+
+/* ---- Chat export modal ---- */
+let chatExportPeriod = 'current-month';
+
+function chatExportRange() {
+  // Resolves the current period choice to a [fromKey, toKey] inclusive range.
+  const now = new Date();
+  if (chatExportPeriod === 'current-month') {
+    const y = now.getFullYear(), m = now.getMonth();
+    const last = new Date(y, m + 1, 0).getDate();
+    return [y + '-' + pad(m + 1) + '-01', y + '-' + pad(m + 1) + '-' + pad(last)];
+  }
+  if (chatExportPeriod === 'selected-month') {
+    const { y, m } = state.statsCursor;
+    // If year-view is active there's no specific month; fall back to current month.
+    if (typeof m !== 'number') {
+      return chatExportRange.call(null, 'current-month');
+    }
+    const last = new Date(y, m + 1, 0).getDate();
+    return [y + '-' + pad(m + 1) + '-01', y + '-' + pad(m + 1) + '-' + pad(last)];
+  }
+  // 'range' — read from the two date inputs
+  const from = document.getElementById('chat-range-from').value;
+  const to = document.getElementById('chat-range-to').value;
+  if (!from || !to) return null;
+  // Swap if user picked them in reverse order
+  return from <= to ? [from, to] : [to, from];
+}
+
+function updateChatExportPreview() {
+  const preview = document.getElementById('chat-export-preview');
+  const range = chatExportRange();
+  if (!range) {
+    preview.value = '';
+    preview.placeholder = 'Выберите диапазон дат';
+    return;
+  }
+  const text = buildChatExportText(range[0], range[1]);
+  preview.value = text;
+  if (!text) preview.placeholder = 'Нет переработок в выбранном периоде';
+}
+
+document.getElementById('set-chat-export').addEventListener('click', () => {
+  chatExportPeriod = 'current-month';
+  document.querySelectorAll('#modal-chat-export .period-choice-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.period === 'current-month')
+  );
+  document.getElementById('chat-range-fields').style.display = 'none';
+  // Default the range pickers to the current month, in case the user switches to "range"
+  const now = new Date();
+  const first = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-01';
+  const today = todayKey();
+  document.getElementById('chat-range-from').value = first;
+  document.getElementById('chat-range-to').value = today;
+  // Hide share button on platforms without Web Share API
+  document.getElementById('chat-export-share').style.display =
+    (navigator.share) ? '' : 'none';
+  updateChatExportPreview();
+  openModal('modal-chat-export');
+});
+
+document.querySelectorAll('#modal-chat-export .period-choice-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    chatExportPeriod = btn.dataset.period;
+    document.querySelectorAll('#modal-chat-export .period-choice-btn').forEach(b =>
+      b.classList.toggle('active', b === btn)
+    );
+    document.getElementById('chat-range-fields').style.display =
+      (chatExportPeriod === 'range') ? '' : 'none';
+    updateChatExportPreview();
+  });
+});
+
+document.getElementById('chat-range-from').addEventListener('change', updateChatExportPreview);
+document.getElementById('chat-range-to').addEventListener('change', updateChatExportPreview);
+
+document.getElementById('chat-export-copy').addEventListener('click', async () => {
+  const text = document.getElementById('chat-export-preview').value;
+  if (!text) { showToast('Нечего копировать'); return; }
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('Скопировано в буфер');
+  } catch (e) {
+    // Fallback for older browsers / insecure contexts: select and execCommand
+    const ta = document.getElementById('chat-export-preview');
+    ta.removeAttribute('readonly');
+    ta.select();
+    try {
+      document.execCommand('copy');
+      showToast('Скопировано в буфер');
+    } catch (err) {
+      showToast('Не удалось скопировать');
+    }
+    ta.setAttribute('readonly', '');
+    window.getSelection().removeAllRanges();
+  }
+});
+
+document.getElementById('chat-export-share').addEventListener('click', async () => {
+  const text = document.getElementById('chat-export-preview').value;
+  if (!text) { showToast('Нечего отправлять'); return; }
+  if (!navigator.share) { showToast('Поделиться недоступно'); return; }
+  try {
+    await navigator.share({ text: text });
+  } catch (e) {
+    // User cancelled — ignore silently
+  }
+});
+
 document.getElementById('set-clear').addEventListener('click', () => {
   if (!confirm('Удалить ВСЕ данные? Это нельзя отменить.')) return;
   state.entries = {};
