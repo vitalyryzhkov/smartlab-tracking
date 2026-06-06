@@ -998,7 +998,7 @@
         <span class="summary-totalhours-value" id="summary-total-hours">0 ч</span>
       </div>
       <div class="summary-overtime" id="summary-overtime-row" style="display:none">
-        <span class="summary-overtime-label">Сверх нормы (8ч/день)</span>
+        <span class="summary-overtime-label">Сверх нормы</span>
         <span class="summary-overtime-value" id="summary-overtime">0 ч</span>
       </div>
     </div>
@@ -1556,12 +1556,8 @@ function renderOvertimeRow(hours) {
 function aggregate(keys) {
   // Bucket hours into weekday/weekend based on calendar OR holiday status.
   // Holiday hours always go into the weekend (+30%) bucket regardless of day.
-  // Also count overtime hours (anything over HOURS_PER_DAY on a regular
-  // weekday with no status). Overtime is a visual signal only — pay is
-  // unchanged.
   let weekdayHours = 0, weekendHours = 0;
   let weekdayPay = 0, weekendPay = 0;
-  let overtime = 0;
   keys.forEach(k => {
     const h = entryHours(k);
     if (!h) return;
@@ -1576,9 +1572,8 @@ function aggregate(keys) {
       weekdayHours += h;
       weekdayPay += h * r.perHour;
     }
-    overtime += overtimeHours(k);
   });
-  return { weekdayHours, weekendHours, weekdayPay, weekendPay, overtime, total: weekdayPay + weekendPay };
+  return { weekdayHours, weekendHours, weekdayPay, weekendPay, total: weekdayPay + weekendPay };
 }
 
 function renderStatsMonth() {
@@ -1598,8 +1593,12 @@ function renderStatsMonth() {
   document.getElementById('summary-weekday-pay').textContent = fmtMoney(agg.weekdayPay);
   document.getElementById('summary-weekend').textContent = fmtHours(agg.weekendHours);
   document.getElementById('summary-weekend-pay').textContent = fmtMoney(agg.weekendPay);
-  document.getElementById('summary-total-hours').textContent = fmtHours(agg.weekdayHours + agg.weekendHours);
-  renderOvertimeRow(agg.overtime);
+  const totalHoursMonth = agg.weekdayHours + agg.weekendHours;
+  document.getElementById('summary-total-hours').textContent = fmtHours(totalHoursMonth);
+  // "Сверх нормы" now means: total hours worked minus the month's norm.
+  // (i.e. how much beyond the planned monthly hours we did, regardless of
+  //  how those extra hours are distributed across days.)
+  renderOvertimeRow(totalHoursMonth - r.norm);
 
   // Norm display — show holiday adjustment if any
   let normText = r.norm + ' ч (' + r.effectiveWorkingDays + ' дн × 8)';
@@ -1633,13 +1632,16 @@ function renderStatsYear() {
   document.getElementById('summary-weekday-pay').textContent = fmtMoney(agg.weekdayPay);
   document.getElementById('summary-weekend').textContent = fmtHours(agg.weekendHours);
   document.getElementById('summary-weekend-pay').textContent = fmtMoney(agg.weekendPay);
-  document.getElementById('summary-total-hours').textContent = fmtHours(agg.weekdayHours + agg.weekendHours);
-  renderOvertimeRow(agg.overtime);
+  const totalHoursYear = agg.weekdayHours + agg.weekendHours;
+  document.getElementById('summary-total-hours').textContent = fmtHours(totalHoursYear);
 
   const wdYear = workingDaysInYear(y);
   const holYear = holidayWeekdaysInYear(y);
   const effYear = Math.max(0, wdYear - holYear);
-  let normText = (effYear * HOURS_PER_DAY) + ' ч (' + effYear + ' дн × 8)';
+  const normYear = effYear * HOURS_PER_DAY;
+  renderOvertimeRow(totalHoursYear - normYear);
+
+  let normText = normYear + ' ч (' + effYear + ' дн × 8)';
   if (holYear > 0) normText += ' — ' + holYear + ' празд.';
   document.getElementById('norm-hours').textContent = normText;
   document.getElementById('norm-rate').textContent = '—';
