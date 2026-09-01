@@ -1040,6 +1040,13 @@
     </div>
 
     <div class="settings-section">
+      <div class="settings-row" id="set-install">
+        <div class="settings-row-label">Установить как приложение</div>
+        <span class="chevron">›</span>
+      </div>
+    </div>
+
+    <div class="settings-section">
       <div class="settings-row" id="set-import">
         <div class="settings-row-label">Импортировать данные</div>
         <span class="chevron">›</span>
@@ -2205,11 +2212,48 @@ document.querySelectorAll('.modal-backdrop').forEach(b => {
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 const installHint = document.getElementById('install-hint');
 const installBtn = document.getElementById('install-btn');
+const installManual = document.getElementById('install-manual');
 let deferredPrompt = null;
 
+// На iOS кнопки установки не будет никогда: Safari не поддерживает
+// beforeinstallprompt. Поэтому подсказку под баннером подменяем на ручной путь.
+const ua = navigator.userAgent;
+const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isIOSAltBrowser = /CriOS|FxiOS|EdgiOS|OPT\//.test(ua); // Chrome/Firefox/Edge/Opera на iOS
+
+// Текст подсказки изменился только для iOS — там ключ версионный, чтобы баннер
+// показался заново и тем, кто скрыл прошлую (бесполезную на айфоне) версию.
+// На Android/десктопе текст прежний, поэтому и флаг прежний: тем, кто уже
+// установил приложение, баннер не возвращаем.
+const INSTALL_DISMISS_KEY = isIOS ? 'smartlab-install-dismissed-2' : 'smartlab-install-dismissed';
+if (isIOS) localStorage.removeItem('smartlab-install-dismissed'); // старый флаг больше не нужен
+
+if (isIOS) {
+  installManual.textContent = isIOSAltBrowser
+    ? 'На айфоне установка идёт вручную: меню браузера «…» → «Поделиться» → «На экран „Домой“».'
+    : 'На айфоне кнопки установки нет — так работает Safari. Нажмите «Поделиться» ' +
+      '(квадрат со стрелкой вверх) и выберите «На экран „Домой“». Если такого пункта нет, ' +
+      'страница открыта во встроенном браузере (Телеграм, почта) — сначала «Открыть в Safari».';
+}
+
 // Show the hint banner unless already installed or dismissed
-if (!isStandalone && !localStorage.getItem('smartlab-install-dismissed')) {
+if (!isStandalone && !localStorage.getItem(INSTALL_DISMISS_KEY)) {
   installHint.classList.add('show');
+}
+
+// «Настройки → Установить как приложение» — вернуть подсказку тем, кто её скрыл
+const installRow = document.getElementById('set-install');
+if (isStandalone) {
+  // уже установлено — прячем секцию целиком, иначе останется пустая полоса
+  installRow.closest('.settings-section').style.display = 'none';
+} else {
+  installRow.addEventListener('click', () => {
+    localStorage.removeItem(INSTALL_DISMISS_KEY);
+    installHint.classList.add('show');
+    switchView('today');
+    window.scrollTo(0, 0);
+  });
 }
 
 // Android/Chrome/Samsung: capture the install prompt and wire it to our button
@@ -2227,20 +2271,20 @@ installBtn.addEventListener('click', async () => {
   installBtn.classList.remove('show');
   if (outcome === 'accepted') {
     installHint.classList.remove('show');
-    localStorage.setItem('smartlab-install-dismissed', '1');
+    localStorage.setItem(INSTALL_DISMISS_KEY, '1');
   }
 });
 
 // When installed, hide the banner for good
 window.addEventListener('appinstalled', () => {
   installHint.classList.remove('show');
-  localStorage.setItem('smartlab-install-dismissed', '1');
+  localStorage.setItem(INSTALL_DISMISS_KEY, '1');
   deferredPrompt = null;
 });
 
 document.getElementById('dismiss-install').addEventListener('click', () => {
   installHint.classList.remove('show');
-  localStorage.setItem('smartlab-install-dismissed', '1');
+  localStorage.setItem(INSTALL_DISMISS_KEY, '1');
 });
 
 // Register the service worker (required for installability on Android)
